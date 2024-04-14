@@ -70,21 +70,21 @@ impl Formatter {
             }
 
             if _char == '{' {
+                // Remove everything until text.
+                let mut chars_to_remove = 0;
+                for check in output.chars().rev() {
+                    if check != ' ' && check != '\t' && check != '\n' && check != '\r' {
+                        break;
+                    }
+                    chars_to_remove += 1;
+                }
+                for _ in 0..chars_to_remove {
+                    output.pop();
+                }
+
                 // Handle new line.
                 match config.new_line_around_braces {
                     NewLineAroundOpenBraceRule::After => {
-                        // Remove everything until text.
-                        let mut chars_to_remove = 0;
-                        for check in output.chars().rev() {
-                            if check != ' ' && check != '\t' && check != '\n' && check != '\r' {
-                                break;
-                            }
-                            chars_to_remove += 1;
-                        }
-                        for _ in 0..chars_to_remove {
-                            output.pop();
-                        }
-
                         // Add brace.
                         output.push(' ');
                         output.push(_char);
@@ -97,9 +97,6 @@ impl Formatter {
                         output += LINE_ENDING;
                         output += &indentation_text.repeat(nesting_count);
                         consecutive_empty_new_line_count += 1;
-
-                        // Ignore everything until we find a text.
-                        ignore_until_text = true;
                     }
                     NewLineAroundOpenBraceRule::Before => {
                         // Insert a new line.
@@ -117,6 +114,9 @@ impl Formatter {
                         consecutive_empty_new_line_count += 1;
                     }
                 }
+
+                // Ignore everything until we find a text.
+                ignore_until_text = true;
             } else if _char == '}' {
                 // Decrease nesting.
                 nesting_count = nesting_count.saturating_sub(1);
