@@ -1,0 +1,21 @@
+name: Cargo build, check and test
+
+on: [push, pull_request, pull_request_review]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-check-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Clippy
+      run: cargo clippy
+    - name: fmt
+      run: cargo fmt --check --all
+    - name: test
+      run: cargo test --verbose

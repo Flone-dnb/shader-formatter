@@ -1,0 +1,11 @@
+[package]
+name = "shader-formatter"
+version = "0.1.0"
+edition = "2021"
+authors = ["Alexander Tretyakov"]
+license = "MIT"
+
+[dependencies]
+chumsky = { git = "https://github.com/zesterer/chumsky.git", rev = "ef9f20f" }
+toml = "0.8.12"
+convert_case = "0.6.0"
