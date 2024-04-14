@@ -40,4 +40,4 @@ Then in the root directory run:
 cargo build --release
 ```
 
-The compiled binary will be located at `/client/target/release/`.
+The compiled binary will be located at `/target/release/`.
