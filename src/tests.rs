@@ -23,11 +23,11 @@ mod tests {
     }
 
     #[test]
-    fn simple_formatting_rules() {
+    fn simple_formatting_with_default_settings() {
         let config = Config::default();
         let formatter = Formatter::new();
 
-        let path_to_res = get_project_root().join("tests");
+        let path_to_res = get_project_root().join("tests").join("default_settings");
         let path_to_input = path_to_res.join("input.hlsl");
         let path_to_output = path_to_res.join("output.hlsl");
 
