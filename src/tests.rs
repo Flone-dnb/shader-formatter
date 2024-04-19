@@ -43,14 +43,14 @@ mod tests {
     }
 
     #[test]
-    fn simple_formatting_with_default_settings() {
+    fn default_settings() {
         let config = Config::default();
 
         compare_files_in_directory(config, "default_settings");
     }
 
     #[test]
-    fn simple_formatting_with_new_line_before_brace() {
+    fn new_line_before_brace() {
         let mut config = Config::default();
 
         // Make sure default config uses other setting.
@@ -60,5 +60,18 @@ mod tests {
         config.new_line_around_braces = NewLineAroundOpenBraceRule::Before;
 
         compare_files_in_directory(config, "new_line_before_brace");
+    }
+
+    #[test]
+    fn spaces_in_brackets() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(config.new_line_around_braces == NewLineAroundOpenBraceRule::After);
+
+        // Change the setting.
+        config.spaces_in_brackets = true;
+
+        compare_files_in_directory(config, "spaces_in_brackets");
     }
 }

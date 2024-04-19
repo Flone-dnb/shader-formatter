@@ -11,6 +11,7 @@ Here is an example `shader-formatter.toml` file:
 ```TOML
 Indentation = "FourSpaces"
 MaxEmptyLines = 1
+SpacesInBrackets = true
 LocalVariableCase = "Camel"
 ```
 
@@ -24,6 +25,7 @@ Below is the list of all possible formatting rules that you can describe in your
     - After
     - Before
 - **MaxEmptyLines** - defines how much consecutive empty lines to keep (accepts any non-negative integer).
+- **SpacesInBrackets** - defines whether or not to add spaces between `(` and `)`, `[` and `]`, `<` and `>`, for example: if enabled converts `foo(param1, param2)` to `foo( param1, param2 )`.
 - **LocalVariableCase** - defines case style for local variables.
     - Camel
     - Pascal

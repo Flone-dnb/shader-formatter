@@ -69,6 +69,14 @@ impl Formatter {
                 }
             }
 
+            if ignore_until_text {
+                if _char != ' ' && _char != '\t' {
+                    ignore_until_text = false;
+                } else {
+                    continue;
+                }
+            }
+
             if _char == '{' {
                 // Remove everything until text.
                 let mut chars_to_remove = 0;
@@ -144,6 +152,39 @@ impl Formatter {
                 output += LINE_ENDING;
                 output += &indentation_text.repeat(nesting_count);
                 consecutive_empty_new_line_count += 1;
+            } else if _char == '<' || _char == '[' || _char == '(' {
+                output.push(_char);
+
+                // Add space if needed.
+                if config.spaces_in_brackets {
+                    output.push(' ');
+                }
+
+                // Wait for text.
+                ignore_until_text = true;
+            } else if _char == '>' || _char == ']' || _char == ')' {
+                // Remove everything until text.
+                let mut chars_to_remove = 0;
+                for check in output.chars().rev() {
+                    if check != ' ' && check != '\t' && check != '\n' && check != '\r' {
+                        break;
+                    }
+                    chars_to_remove += 1;
+                }
+                for _ in 0..chars_to_remove {
+                    output.pop();
+                }
+
+                // Add space if needed.
+                let nothing_in_brackets = match output.chars().last() {
+                    None => false,
+                    Some(c) => c == '<' || c == '[' || c == '(',
+                };
+                if config.spaces_in_brackets && !nothing_in_brackets {
+                    output.push(' ');
+                }
+
+                output.push(_char);
             } else {
                 if _char == ')' {
                     // Check if we have spaces like `(    )` to remove them.

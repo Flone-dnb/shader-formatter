@@ -1,3 +1,5 @@
+use toml::Value;
+
 use crate::rules::*;
 
 /// Name of the file that stores formatting rules.
@@ -8,6 +10,7 @@ pub struct Config {
     pub new_line_around_braces: NewLineAroundOpenBraceRule,
     pub indentation: IndentationRule,
     pub max_empty_lines: usize,
+    pub spaces_in_brackets: bool,
     pub local_variable_case: Option<Case>,
 }
 
@@ -17,6 +20,7 @@ impl Default for Config {
             max_empty_lines: 1,
             new_line_around_braces: NewLineAroundOpenBraceRule::After,
             indentation: IndentationRule::FourSpaces,
+            spaces_in_brackets: false,
             local_variable_case: None,
         }
     }
@@ -76,95 +80,102 @@ impl Config {
         for (key, value) in table {
             match key.as_str() {
                 "Indentation" => {
-                    // Make sure value is a string.
-                    let value_str = match value.as_str() {
-                        Some(s) => s,
-                        None => {
-                            return Err(format!(
-                                "expected value for key \"{}\" to be a string",
-                                key
-                            ))
-                        }
-                    };
-
-                    config.indentation = match value_str {
+                    config.indentation = match Self::toml_value_to_string(&key, &value)? {
                         "Tab" => IndentationRule::Tab,
                         "TwoSpaces" => IndentationRule::TwoSpaces,
                         "FourSpaces" => IndentationRule::FourSpaces,
-                        _ => {
+                        other => {
                             return Err(format!(
                                 "found unknown value \"{}\" for rule \"{}\"",
-                                value_str, key
+                                other, key
                             ))
                         }
                     };
                 }
                 "LocalVariableCase" => {
-                    // Make sure value is a string.
-                    let value_str = match value.as_str() {
-                        Some(s) => s,
-                        None => {
-                            return Err(format!(
-                                "expected value for key \"{}\" to be a string",
-                                key
-                            ))
-                        }
-                    };
-
-                    config.local_variable_case = Some(match value_str {
-                        "Camel" => Case::Camel,
-                        "Pascal" => Case::Pascal,
-                        "Snake" => Case::Snake,
-                        "UpperSnake" => Case::UpperSnake,
-                        _ => {
-                            return Err(format!(
-                                "found unknown value \"{}\" for rule \"{}\"",
-                                value_str, key
-                            ))
-                        }
-                    })
+                    config.local_variable_case =
+                        Some(match Self::toml_value_to_string(&key, &value)? {
+                            "Camel" => Case::Camel,
+                            "Pascal" => Case::Pascal,
+                            "Snake" => Case::Snake,
+                            "UpperSnake" => Case::UpperSnake,
+                            other => {
+                                return Err(format!(
+                                    "found unknown value \"{}\" for rule \"{}\"",
+                                    other, key
+                                ))
+                            }
+                        })
                 }
                 "NewLineAroundOpenBraceRule" => {
-                    // Make sure value is a string.
-                    let value_str = match value.as_str() {
-                        Some(s) => s,
-                        None => {
-                            return Err(format!(
-                                "expected value for key \"{}\" to be a string",
-                                key
-                            ))
-                        }
-                    };
-
-                    config.new_line_around_braces = match value_str {
+                    config.new_line_around_braces = match Self::toml_value_to_string(&key, &value)?
+                    {
                         "After" => NewLineAroundOpenBraceRule::After,
                         "Before" => NewLineAroundOpenBraceRule::Before,
-                        _ => {
+                        other => {
                             return Err(format!(
                                 "found unknown value \"{}\" for rule \"{}\"",
-                                value_str, key
+                                other, key
                             ))
                         }
                     }
                 }
                 "MaxEmptyLines" => {
-                    // Make sure value is an integer.
-                    let value_int = match value.as_integer() {
-                        Some(s) => s,
-                        None => {
-                            return Err(format!(
-                                "expected value for key \"{}\" to be a string",
-                                key
-                            ))
-                        }
-                    };
-
-                    config.max_empty_lines = value_int as usize;
+                    config.max_empty_lines = Self::toml_value_to_usize(&key, &value)?;
+                }
+                "SpacesInBrackets" => {
+                    config.spaces_in_brackets = Self::toml_value_to_bool(&key, &value)?;
                 }
                 _ => return Err(format!("found unknown rule \"{}\"", key)),
             }
         }
 
         Ok(config)
+    }
+
+    /// Tries to convert a TOML value to a string and returns a meaningful error message
+    /// in case we failed.
+    fn toml_value_to_string<'a>(key: &str, value: &'a Value) -> Result<&'a str, String> {
+        match value.as_str() {
+            Some(v) => Ok(v),
+            None => return Err(format!("expected value for key \"{}\" to be a string", key)),
+        }
+    }
+
+    /// Tries to convert a TOML value to a `usize` and returns a meaningful error message
+    /// in case we failed.
+    fn toml_value_to_usize(key: &str, value: &Value) -> Result<usize, String> {
+        match value.as_integer() {
+            Some(v) => {
+                if v.is_negative() {
+                    return Err(format!(
+                        "expected value for key \"{}\" to be an unsigned integer",
+                        key
+                    ));
+                }
+
+                Ok(v as usize)
+            }
+            None => {
+                return Err(format!(
+                    "expected value for key \"{}\" to be an integer",
+                    key
+                ))
+            }
+        }
+    }
+
+    /// Tries to convert a TOML value to a boolean and returns a meaningful error message
+    /// in case we failed.
+    fn toml_value_to_bool(key: &str, value: &Value) -> Result<bool, String> {
+        match value.as_bool() {
+            Some(v) => Ok(v),
+            None => {
+                return Err(format!(
+                    "expected value for key \"{}\" to be a boolean",
+                    key
+                ))
+            }
+        }
     }
 }
