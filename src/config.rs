@@ -156,7 +156,7 @@ impl Config {
     fn toml_value_to_string<'a>(key: &str, value: &'a Value) -> Result<&'a str, String> {
         match value.as_str() {
             Some(v) => Ok(v),
-            None => return Err(format!("expected value for key \"{}\" to be a string", key)),
+            None => Err(format!("expected value for key \"{}\" to be a string", key)),
         }
     }
 
@@ -174,12 +174,10 @@ impl Config {
 
                 Ok(v as usize)
             }
-            None => {
-                return Err(format!(
-                    "expected value for key \"{}\" to be an integer",
-                    key
-                ))
-            }
+            None => Err(format!(
+                "expected value for key \"{}\" to be an integer",
+                key
+            )),
         }
     }
 
@@ -188,12 +186,10 @@ impl Config {
     fn toml_value_to_bool(key: &str, value: &Value) -> Result<bool, String> {
         match value.as_bool() {
             Some(v) => Ok(v),
-            None => {
-                return Err(format!(
-                    "expected value for key \"{}\" to be a boolean",
-                    key
-                ))
-            }
+            None => Err(format!(
+                "expected value for key \"{}\" to be a boolean",
+                key
+            )),
         }
     }
 }

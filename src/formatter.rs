@@ -44,7 +44,7 @@ impl Formatter {
 
         // Show any errors.
         if !errors.is_empty() {
-            for error in errors {
+            if let Some(error) = errors.into_iter().next() {
                 let (line, column) =
                     helpers::span_offset_to_line_and_column(error.span().start, output.as_str());
                 let reason = error.reason();
@@ -69,7 +69,7 @@ impl Formatter {
 
         // Show any errors.
         if !errors.is_empty() {
-            for error in errors {
+            if let Some(error) = errors.into_iter().next() {
                 let (line, column) =
                     helpers::span_offset_to_line_and_column(error.span().start, output.as_str());
                 let reason = error.reason();
@@ -84,7 +84,7 @@ impl Formatter {
             None => Ok(output), // nothing to do here
             Some(statements) => match self.check_complex_rules(statements) {
                 Ok(_) => Ok(output), // everything is fine
-                Err(msg) => return Err(format!("{}: {}", CHANGES_REQUIRED_ERR_MSG, msg)),
+                Err(msg) => Err(format!("{}: {}", CHANGES_REQUIRED_ERR_MSG, msg)),
             },
         }
     }
@@ -284,35 +284,29 @@ impl Formatter {
         statements: Vec<(parser::Statement<'_>, SimpleSpan)>,
     ) -> Result<(), String> {
         for (statement, _) in statements {
-            match statement {
-                VariableDeclaration(_type, name) => {
-                    if self.config.local_variable_case.is_some() {
-                        // Check case.
-                        match Self::is_case_different(
-                            name,
-                            self.config.local_variable_case.unwrap(),
-                        ) {
-                            Ok(_) => {}
-                            Err(correct) => {
-                                return Err(format!(
+            if let VariableDeclaration(_type, name) = statement {
+                if self.config.local_variable_case.is_some() {
+                    // Check case.
+                    match Self::is_case_different(name, self.config.local_variable_case.unwrap()) {
+                        Ok(_) => {}
+                        Err(correct) => {
+                            return Err(format!(
                                 "variable \"{}\" has incorrect case, the correct case is \"{}\"",
                                 name, correct
                             ));
-                            }
                         }
                     }
-
-                    if _type == Type::Bool && self.config.bool_prefix.is_some() {
-                        Self::check_prefix(name, self.config.bool_prefix.as_ref().unwrap())?
-                    }
-                    if _type == Type::Integer && self.config.int_prefix.is_some() {
-                        Self::check_prefix(name, self.config.int_prefix.as_ref().unwrap())?
-                    }
-                    if _type == Type::Float && self.config.float_prefix.is_some() {
-                        Self::check_prefix(name, self.config.float_prefix.as_ref().unwrap())?
-                    }
                 }
-                _ => {}
+
+                if _type == Type::Bool && self.config.bool_prefix.is_some() {
+                    Self::check_prefix(name, self.config.bool_prefix.as_ref().unwrap())?
+                }
+                if _type == Type::Integer && self.config.int_prefix.is_some() {
+                    Self::check_prefix(name, self.config.int_prefix.as_ref().unwrap())?
+                }
+                if _type == Type::Float && self.config.float_prefix.is_some() {
+                    Self::check_prefix(name, self.config.float_prefix.as_ref().unwrap())?
+                }
             }
         }
 
