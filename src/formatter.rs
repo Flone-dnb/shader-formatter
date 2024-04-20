@@ -1,11 +1,17 @@
+use chumsky::prelude::*;
 use chumsky::span::SimpleSpan;
 use convert_case::Casing;
 
 use crate::{
     config::Config,
-    parser::{self, Statement::*},
+    helpers,
+    parser::{self, Statement::*, Type},
     rules::{Case, IndentationRule, NewLineAroundOpenBraceRule},
 };
+
+/// Text that we append to the beginning of an error message if manual changes (in the code) are required
+/// (like changing a variable's case).
+pub const CHANGES_REQUIRED_ERR_MSG: &str = "changes required";
 
 #[cfg(windows)]
 const LINE_ENDING: &str = "\r\n";
@@ -13,18 +19,81 @@ const LINE_ENDING: &str = "\r\n";
 const LINE_ENDING: &str = "\n";
 
 /// Applies rules on files.
-pub struct Formatter {}
+pub struct Formatter {
+    config: Config,
+}
 
 impl Formatter {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(config: Config) -> Self {
+        Self { config }
+    }
+
+    /// Formats the specified content according to the formatting rules from config.
+    ///
+    /// # Return
+    /// `Ok(String)` if successful with formatted content, otherise `Err(String)` with a meaningful
+    /// error message.
+    pub fn format(&self, content: &str) -> Result<String, String> {
+        // Apply rules that don't need tokens.
+        let output = self.apply_simple_rules(content);
+
+        // Parse tokens.
+        let (tokens, errors) = parser::token_parser()
+            .parse(output.as_str())
+            .into_output_errors();
+
+        // Show any errors.
+        if !errors.is_empty() {
+            for error in errors {
+                let (line, column) =
+                    helpers::span_offset_to_line_and_column(error.span().start, output.as_str());
+                let reason = error.reason();
+
+                return Err(format!(
+                    "token parser error at line {} column {}, reason: {}",
+                    line, column, reason
+                ));
+            }
+        }
+
+        // Exit of no tokens returned (not an error).
+        if tokens.is_none() {
+            return Ok(output);
+        }
+        let tokens: Vec<(parser::Token<'_>, SimpleSpan)> = tokens.unwrap();
+
+        // Parse statements.
+        let (statements, errors) = parser::statement_parser()
+            .parse(tokens.spanned((tokens.len()..tokens.len()).into()))
+            .into_output_errors();
+
+        // Show any errors.
+        if !errors.is_empty() {
+            for error in errors {
+                let (line, column) =
+                    helpers::span_offset_to_line_and_column(error.span().start, output.as_str());
+                let reason = error.reason();
+                return Err(format!(
+                    "statement parser error at line {} column {}, reason: {}",
+                    line, column, reason
+                ));
+            }
+        }
+
+        match statements {
+            None => Ok(output), // nothing to do here
+            Some(statements) => match self.check_complex_rules(statements) {
+                Ok(_) => Ok(output), // everything is fine
+                Err(msg) => return Err(format!("{}: {}", CHANGES_REQUIRED_ERR_MSG, msg)),
+            },
+        }
     }
 
     /// Applies the most simplest formatting rules that do not require
     /// any prior parsing (no tokens required).
-    pub fn apply_simple_rules(&self, config: &Config, content: &str) -> String {
+    fn apply_simple_rules(&self, content: &str) -> String {
         // Prepare indentation text.
-        let indentation_text = match config.indentation {
+        let indentation_text = match self.config.indentation {
             IndentationRule::Tab => "\t",
             IndentationRule::TwoSpaces => "  ",
             IndentationRule::FourSpaces => "    ",
@@ -48,7 +117,8 @@ impl Formatter {
             if _char == '\n' {
                 is_on_new_line = true;
 
-                if !ignore_until_text && consecutive_empty_new_line_count <= config.max_empty_lines
+                if !ignore_until_text
+                    && consecutive_empty_new_line_count <= self.config.max_empty_lines
                 {
                     output += LINE_ENDING;
                     output += &indentation_text.repeat(nesting_count);
@@ -91,7 +161,7 @@ impl Formatter {
                 }
 
                 // Handle new line.
-                match config.new_line_around_braces {
+                match self.config.new_line_around_braces {
                     NewLineAroundOpenBraceRule::After => {
                         // Add brace.
                         output.push(' ');
@@ -156,7 +226,7 @@ impl Formatter {
                 output.push(_char);
 
                 // Add space if needed.
-                if config.spaces_in_brackets {
+                if self.config.spaces_in_brackets {
                     output.push(' ');
                 }
 
@@ -180,7 +250,7 @@ impl Formatter {
                     None => false,
                     Some(c) => c == '<' || c == '[' || c == '(',
                 };
-                if config.spaces_in_brackets && !nothing_in_brackets {
+                if self.config.spaces_in_brackets && !nothing_in_brackets {
                     output.push(' ');
                 }
 
@@ -209,22 +279,37 @@ impl Formatter {
     }
 
     /// Checks complex formatting rules that require prior parsing (tokens required).
-    pub fn check_complex_rules(
+    fn check_complex_rules(
         &self,
-        config: &Config,
         statements: Vec<(parser::Statement<'_>, SimpleSpan)>,
     ) -> Result<(), String> {
         for (statement, _) in statements {
             match statement {
-                VariableDeclaration(_, name) if config.local_variable_case.is_some() => {
-                    match Self::is_case_different(name, config.local_variable_case.unwrap()) {
-                        Ok(_) => {}
-                        Err(correct) => {
-                            return Err(format!(
+                VariableDeclaration(_type, name) => {
+                    if self.config.local_variable_case.is_some() {
+                        // Check case.
+                        match Self::is_case_different(
+                            name,
+                            self.config.local_variable_case.unwrap(),
+                        ) {
+                            Ok(_) => {}
+                            Err(correct) => {
+                                return Err(format!(
                                 "variable \"{}\" has incorrect case, the correct case is \"{}\"",
                                 name, correct
                             ));
+                            }
                         }
+                    }
+
+                    if _type == Type::Bool && self.config.bool_prefix.is_some() {
+                        Self::check_prefix(name, self.config.bool_prefix.as_ref().unwrap())?
+                    }
+                    if _type == Type::Integer && self.config.int_prefix.is_some() {
+                        Self::check_prefix(name, self.config.int_prefix.as_ref().unwrap())?
+                    }
+                    if _type == Type::Float && self.config.float_prefix.is_some() {
+                        Self::check_prefix(name, self.config.float_prefix.as_ref().unwrap())?
                     }
                 }
                 _ => {}
@@ -234,9 +319,25 @@ impl Formatter {
         Ok(())
     }
 
+    /// This function contains repetitive code for checking prefixes.
+    ///
+    /// # Return
+    /// `Ok` if prefix is correct, otherwise `Err` that contains a meaningful error message
+    /// about wrong prefix.
+    fn check_prefix(name: &str, prefix: &str) -> Result<(), String> {
+        if !name.starts_with(prefix) {
+            return Err(format!(
+                "variable \"{}\" has incorrect prefix, the correct prefix is \"{}\"",
+                name, prefix
+            ));
+        }
+
+        Ok(())
+    }
+
     /// Checks if the case of the specified test string is different from the specified case.
     ///
-    /// # Returns
+    /// # Return
     /// `Ok` if case is correct, otherwise `Err` that contains the specified string in the correct
     /// casing.
     fn is_case_different(test: &str, target_case: Case) -> Result<(), String> {

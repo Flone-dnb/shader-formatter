@@ -6,12 +6,16 @@ use crate::rules::*;
 const CONFIG_FILE_NAME: &str = "shader-formatter.toml";
 
 /// Represents a config file with formatting rules, deserialized from the disk.
+#[derive(Clone)]
 pub struct Config {
     pub new_line_around_braces: NewLineAroundOpenBraceRule,
     pub indentation: IndentationRule,
     pub max_empty_lines: usize,
     pub spaces_in_brackets: bool,
     pub local_variable_case: Option<Case>,
+    pub bool_prefix: Option<String>,
+    pub int_prefix: Option<String>,
+    pub float_prefix: Option<String>,
 }
 
 impl Default for Config {
@@ -22,6 +26,9 @@ impl Default for Config {
             indentation: IndentationRule::FourSpaces,
             spaces_in_brackets: false,
             local_variable_case: None,
+            bool_prefix: None,
+            int_prefix: None,
+            float_prefix: None,
         }
     }
 }
@@ -125,6 +132,17 @@ impl Config {
                 }
                 "SpacesInBrackets" => {
                     config.spaces_in_brackets = Self::toml_value_to_bool(&key, &value)?;
+                }
+                "BoolPrefix" => {
+                    config.bool_prefix =
+                        Some(Self::toml_value_to_string(&key, &value)?.to_string());
+                }
+                "IntPrefix" => {
+                    config.int_prefix = Some(Self::toml_value_to_string(&key, &value)?.to_string());
+                }
+                "FloatPrefix" => {
+                    config.float_prefix =
+                        Some(Self::toml_value_to_string(&key, &value)?.to_string());
                 }
                 _ => return Err(format!("found unknown rule \"{}\"", key)),
             }

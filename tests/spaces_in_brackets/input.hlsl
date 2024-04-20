@@ -6,9 +6,6 @@ float4 main( VertexOut pin	 ) : SV_Target 		  {
 float sum = foo(0.5F, 0.5f, 0.5, 0.);
 		{ int invalidCase = 2;}
 
-
-
-
 	if (test == -1)  
 	{
 		if (true){
@@ -31,25 +28,3 @@ float sum = foo(0.5F, 0.5f, 0.5, 0.);
 
 template<Foo>
 void test(){}
-
-	/**
-	  * This is a comment.
-	*/
-	namespace hello
-{
-	/**
-	* This is a description of the function.
-	*
-	* @remark It does not have any parameters.
-	*/
-void foo( 	)
-{
-
-// TEST
-	int test = 0;
-	test
-		*= 2; // this is not a C-style comment.
-
-		/** This is a comment. */
-		int b = 2;}
-	}
