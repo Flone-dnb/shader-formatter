@@ -17,16 +17,16 @@ LocalVariableCase = "Camel"
 
 Below is the list of all possible formatting rules that you can describe in your `shader-formatter.toml`:
 
-- **Indentation** - defines characters that will be used to indent lines of code.
+- **Indentation** (string) - defines characters that will be used to indent lines of code.
     - Tab
     - TwoSpaces
     - FourSpaces
-- **NewLineAroundOpenBraceRule** - defines whether to put a new line before an open brace or after it.
+- **NewLineAroundOpenBraceRule** (string) - defines whether to put a new line before an open brace or after it.
     - After
     - Before
-- **MaxEmptyLines** - defines how much consecutive empty lines to keep (accepts any non-negative integer).
-- **SpacesInBrackets** - defines whether or not to add spaces between `(` and `)`, `[` and `]`, `<` and `>`, for example: if enabled converts `foo(param1, param2)` to `foo( param1, param2 )`.
-- **LocalVariableCase** - defines case style for local variables.
+- **MaxEmptyLines** (unsigned integer) - defines how much consecutive empty lines to keep.
+- **SpacesInBrackets** (boolean) - defines whether or not to add spaces between `(` and `)`, `[` and `]`, `<` and `>`, for example: if enabled converts `foo(param1, param2)` to `foo( param1, param2 )`.
+- **LocalVariableCase** (string) - defines case style for local variables.
     - Camel
     - Pascal
     - Snake
