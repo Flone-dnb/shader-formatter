@@ -10,6 +10,8 @@ pub enum Type {
     Float,
     Vector,
     Matrix,
+    Texture,
+    Sampler,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -96,6 +98,8 @@ pub fn token_parser<'src>(
         "float4x4" | "mat4x4" | "float3x3" | "mat3x3" | "float2x2" | "mat2x2" => {
             Token::TypeName(Type::Matrix)
         }
+        "Texture2D" | "sampler2D" => Token::TypeName(Type::Texture),
+        "SamplerState" | "SamplerComparisonState" => Token::TypeName(Type::Sampler),
         _ => Token::Ident(ident),
     });
 
@@ -140,6 +144,8 @@ where
 
     // A parser for structs.
     let _struct = just(Token::Ident("struct"))
+        .or(just(Token::Ident("uniform")))
+        .or(just(Token::Ident("buffer")))
         .then(ident)
         .then_ignore(just(Token::Ctrl('{')))
         .then(field.repeated().collect())
@@ -148,7 +154,8 @@ where
     // A parser for variable declaration.
     let variable_declaration = var_type
         .then(ident)
-        .then_ignore(just(Token::Op("=")))
+        .then_ignore(just(Token::Op("=")).or_not())
+        .then_ignore(none_of(Token::Ctrl(';')).repeated())
         .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
 
     // A parser for function arguments.
