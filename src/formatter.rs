@@ -288,12 +288,20 @@ impl Formatter {
                 VariableDeclaration(_type, name) => {
                     self.check_variable_name(name, _type)?;
                 }
-                Struct(_, fields) => {
+                Struct(struct_name, fields) => {
+                    if let Some(case) = self.config.struct_case {
+                        Self::check_name_case(struct_name, case)?;
+                    }
+
                     for (field_type, field_name) in fields {
                         self.check_variable_name(field_name, field_type)?;
                     }
                 }
-                Function(_, args) => {
+                Function(func_name, args) => {
+                    if let Some(case) = self.config.function_case {
+                        Self::check_name_case(func_name, case)?;
+                    }
+
                     for (arg_type, arg_name) in args {
                         self.check_variable_name(arg_name, arg_type)?;
                     }
@@ -312,16 +320,8 @@ impl Formatter {
     /// an error message with suggestions according to the rules.
     fn check_variable_name(&self, name: &str, _type: Type) -> Result<(), String> {
         // Check case.
-        if self.config.variable_case.is_some() {
-            match Self::is_case_different(name, self.config.variable_case.unwrap()) {
-                Ok(_) => {}
-                Err(correct) => {
-                    return Err(format!(
-                        "variable \"{}\" has incorrect case, the correct case is \"{}\"",
-                        name, correct
-                    ));
-                }
-            }
+        if let Some(case) = self.config.variable_case {
+            Self::check_name_case(name, case)?
         }
 
         // Check prefixes.
@@ -336,6 +336,16 @@ impl Formatter {
         }
 
         Ok(())
+    }
+
+    fn check_name_case(name: &str, case: Case) -> Result<(), String> {
+        match Self::is_case_different(name, case) {
+            Ok(_) => Ok(()),
+            Err(correct) => Err(format!(
+                "\"{}\" has incorrect case, the correct case is \"{}\"",
+                name, correct
+            )),
+        }
     }
 
     /// This function contains repetitive code for checking prefixes.

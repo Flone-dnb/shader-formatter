@@ -34,6 +34,8 @@ Below are the rules that are not checked unless they are specified in your confi
     - Pascal
     - Snake
     - UpperSnake
+- **FunctionCase** (string) - defines case style for functions (options are the same as in "variable case" rule).
+- **StructCase** (string) - defines case style for structs (options are the same as in "variable case" rule).
 - **BoolPrefix** (string) - defines required prefix for `bool` variables, for example if this rule is set to `b` then a correct variable may look like this: `bValue`.
 - **IntPrefix** (string) - defines required prefix for integer variables, for example if this rule is set to `i` then a correct variable may look like this: `iValue`.
 - **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.

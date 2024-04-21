@@ -13,6 +13,8 @@ pub struct Config {
     pub max_empty_lines: usize,
     pub spaces_in_brackets: bool,
     pub variable_case: Option<Case>,
+    pub function_case: Option<Case>,
+    pub struct_case: Option<Case>,
     pub bool_prefix: Option<String>,
     pub int_prefix: Option<String>,
     pub float_prefix: Option<String>,
@@ -26,6 +28,8 @@ impl Default for Config {
             indentation: IndentationRule::FourSpaces,
             spaces_in_brackets: false,
             variable_case: None,
+            function_case: None,
+            struct_case: None,
             bool_prefix: None,
             int_prefix: None,
             float_prefix: None,
@@ -100,19 +104,12 @@ impl Config {
                     };
                 }
                 "VariableCase" => {
-                    config.variable_case = Some(match Self::toml_value_to_string(&key, &value)? {
-                        "Camel" => Case::Camel,
-                        "Pascal" => Case::Pascal,
-                        "Snake" => Case::Snake,
-                        "UpperSnake" => Case::UpperSnake,
-                        other => {
-                            return Err(format!(
-                                "found unknown value \"{}\" for rule \"{}\"",
-                                other, key
-                            ))
-                        }
-                    })
+                    config.variable_case = Some(Self::toml_value_to_case(&key, &value)?)
                 }
+                "FunctionCase" => {
+                    config.function_case = Some(Self::toml_value_to_case(&key, &value)?)
+                }
+                "StructCase" => config.struct_case = Some(Self::toml_value_to_case(&key, &value)?),
                 "NewLineAroundOpenBraceRule" => {
                     config.new_line_around_braces = match Self::toml_value_to_string(&key, &value)?
                     {
@@ -148,6 +145,21 @@ impl Config {
         }
 
         Ok(config)
+    }
+
+    /// Tries to convert a TOML value to a case type and returns a meaningful error message
+    /// if we failed.
+    fn toml_value_to_case(key: &str, value: &Value) -> Result<Case, String> {
+        match Self::toml_value_to_string(key, value)? {
+            "Camel" => Ok(Case::Camel),
+            "Pascal" => Ok(Case::Pascal),
+            "Snake" => Ok(Case::Snake),
+            "UpperSnake" => Ok(Case::UpperSnake),
+            other => Err(format!(
+                "found unknown value \"{}\" for rule \"{}\"",
+                other, key
+            )),
+        }
     }
 
     /// Tries to convert a TOML value to a string and returns a meaningful error message

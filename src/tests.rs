@@ -180,6 +180,34 @@ mod tests {
     }
 
     #[test]
+    fn function_case() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(config.function_case.is_none());
+
+        // Change the setting.
+        config.function_case = Some(Case::Camel);
+
+        // Test.
+        test_complex_rules(config, "function_case");
+    }
+
+    #[test]
+    fn struct_case() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(config.struct_case.is_none());
+
+        // Change the setting.
+        config.struct_case = Some(Case::Pascal);
+
+        // Test.
+        test_complex_rules(config, "struct_case");
+    }
+
+    #[test]
     fn variable_prefix() {
         let mut config = Config::default();
 
