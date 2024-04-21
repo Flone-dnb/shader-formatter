@@ -12,12 +12,10 @@ float4 main(VertexOut pin) : SV_Target {
             // TODO
             
             // TODO
-        }
-        else {
+        }else {
             // TODO
         }
     }
-    
     test = static_cast<float>(sum);
     
     float array[2];

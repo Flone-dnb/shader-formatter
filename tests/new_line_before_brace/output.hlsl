@@ -16,13 +16,11 @@ float4 main(VertexOut pin) : SV_Target
             // TODO
             
             // TODO
-        }
-        else
+        }else
         {
             // TODO
         }
     }
-    
     return float4(sum, sum, sum, sum);
 }
 

@@ -218,10 +218,10 @@ impl Formatter {
                 // Copy brace.
                 output.push(_char);
 
-                // Add a new line.
-                output += LINE_ENDING;
-                output += &indentation_text.repeat(nesting_count);
-                consecutive_empty_new_line_count += 1;
+                // Don't insert a new line here, here is an example why:
+                // struct Foo{
+                // };
+                // The `;` will be on the new line if we insert one.
             } else if _char == '<' || _char == '[' || _char == '(' {
                 output.push(_char);
 
