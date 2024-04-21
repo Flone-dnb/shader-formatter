@@ -8,6 +8,8 @@ pub enum Type {
     Bool,
     Integer,
     Float,
+    Vector,
+    Matrix,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -90,6 +92,10 @@ pub fn token_parser<'src>(
         "float" | "half" | "double" => Token::TypeName(Type::Float),
         "int" | "uint" | "dword" => Token::TypeName(Type::Integer),
         "bool" => Token::TypeName(Type::Bool),
+        "float4" | "vec4" | "float2" | "vec2" | "float3" | "vec3" => Token::TypeName(Type::Vector),
+        "float4x4" | "mat4x4" | "float3x3" | "mat3x3" | "float2x2" | "mat2x2" => {
+            Token::TypeName(Type::Matrix)
+        }
         _ => Token::Ident(ident),
     });
 
