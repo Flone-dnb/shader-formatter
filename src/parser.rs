@@ -32,6 +32,7 @@ impl std::fmt::Display for Token<'_> {
 pub enum ComplexToken<'src> {
     VariableDeclaration(Type, &'src str),
     Struct(&'src str, Vec<(Type, &'src str)>), // struct with fields
+    Function(&'src str, Vec<(Type, &'src str)>), // function with arguments
     Other(Token<'src>),
 }
 
@@ -144,8 +145,21 @@ where
         .then_ignore(just(Token::Op("=")))
         .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
 
+    // A parser for function arguments.
+    let argument = var_type
+        .then(ident)
+        .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))));
+
+    // A parser for functions.
+    let function = var_type
+        .ignore_then(ident)
+        .then_ignore(just(Token::Ctrl('(')))
+        .then(argument.repeated().collect())
+        .map(|(name, args)| ComplexToken::Function(name, args));
+
     // If non of our parsers from above worked then just pass the token.
     let output = _struct
+        .or(function)
         .or(variable_declaration)
         .or(token.map(ComplexToken::Other));
 

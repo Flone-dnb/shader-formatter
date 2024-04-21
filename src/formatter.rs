@@ -293,6 +293,11 @@ impl Formatter {
                         self.check_variable_name(field_name, field_type)?;
                     }
                 }
+                Function(_, args) => {
+                    for (arg_type, arg_name) in args {
+                        self.check_variable_name(arg_name, arg_type)?;
+                    }
+                }
                 Other(_) => {}
             }
         }
