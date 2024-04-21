@@ -307,8 +307,8 @@ impl Formatter {
     /// an error message with suggestions according to the rules.
     fn check_variable_name(&self, name: &str, _type: Type) -> Result<(), String> {
         // Check case.
-        if self.config.local_variable_case.is_some() {
-            match Self::is_case_different(name, self.config.local_variable_case.unwrap()) {
+        if self.config.variable_case.is_some() {
+            match Self::is_case_different(name, self.config.variable_case.unwrap()) {
                 Ok(_) => {}
                 Err(correct) => {
                     return Err(format!(

@@ -170,10 +170,10 @@ mod tests {
         let mut config = Config::default();
 
         // Make sure default config uses other setting.
-        assert!(config.local_variable_case.is_none());
+        assert!(config.variable_case.is_none());
 
         // Change the setting.
-        config.local_variable_case = Some(Case::Camel);
+        config.variable_case = Some(Case::Camel);
 
         // Test.
         test_complex_rules(config, "variable_case");

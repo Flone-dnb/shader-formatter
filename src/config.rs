@@ -12,7 +12,7 @@ pub struct Config {
     pub indentation: IndentationRule,
     pub max_empty_lines: usize,
     pub spaces_in_brackets: bool,
-    pub local_variable_case: Option<Case>,
+    pub variable_case: Option<Case>,
     pub bool_prefix: Option<String>,
     pub int_prefix: Option<String>,
     pub float_prefix: Option<String>,
@@ -25,7 +25,7 @@ impl Default for Config {
             new_line_around_braces: NewLineAroundOpenBraceRule::After,
             indentation: IndentationRule::FourSpaces,
             spaces_in_brackets: false,
-            local_variable_case: None,
+            variable_case: None,
             bool_prefix: None,
             int_prefix: None,
             float_prefix: None,
@@ -99,20 +99,19 @@ impl Config {
                         }
                     };
                 }
-                "LocalVariableCase" => {
-                    config.local_variable_case =
-                        Some(match Self::toml_value_to_string(&key, &value)? {
-                            "Camel" => Case::Camel,
-                            "Pascal" => Case::Pascal,
-                            "Snake" => Case::Snake,
-                            "UpperSnake" => Case::UpperSnake,
-                            other => {
-                                return Err(format!(
-                                    "found unknown value \"{}\" for rule \"{}\"",
-                                    other, key
-                                ))
-                            }
-                        })
+                "VariableCase" => {
+                    config.variable_case = Some(match Self::toml_value_to_string(&key, &value)? {
+                        "Camel" => Case::Camel,
+                        "Pascal" => Case::Pascal,
+                        "Snake" => Case::Snake,
+                        "UpperSnake" => Case::UpperSnake,
+                        other => {
+                            return Err(format!(
+                                "found unknown value \"{}\" for rule \"{}\"",
+                                other, key
+                            ))
+                        }
+                    })
                 }
                 "NewLineAroundOpenBraceRule" => {
                     config.new_line_around_braces = match Self::toml_value_to_string(&key, &value)?

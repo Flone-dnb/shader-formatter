@@ -29,7 +29,7 @@ Below is the list of all possible formatting rules that you can describe in your
 
 Below are the rules that are not checked unless they are specified in your configuration file:
 
-- **LocalVariableCase** (string) - defines case style for local variables.
+- **VariableCase** (string) - defines case style for variables.
     - Camel
     - Pascal
     - Snake
