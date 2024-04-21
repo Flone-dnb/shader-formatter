@@ -29,33 +29,10 @@ impl std::fmt::Display for Token<'_> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum Statement<'src> {
+pub enum ComplexToken<'src> {
     VariableDeclaration(Type, &'src str),
-    Token(Token<'src>),
-}
-
-pub fn statement_parser<'src, I>(
-) -> impl Parser<'src, I, Vec<(Statement<'src>, Span)>, extra::Err<Rich<'src, Token<'src>>>>
-where
-    I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>,
-{
-    let var_type = select! { Token::TypeName(t) => t };
-    let var_ident = select! { Token::Ident(ident) => ident };
-    let token = select! { token => token };
-
-    // A parser for variable declaration.
-    let variable_declaration = var_type
-        .then(var_ident)
-        .then_ignore(just(Token::Op("=")))
-        .map(|(t, name)| Statement::VariableDeclaration(t, name));
-
-    // If non of our parsers from above worked then just pass the token.
-    let output = variable_declaration.or(token.map(Statement::Token));
-
-    output
-        .map_with(|statement, extra| (statement, extra.span()))
-        .repeated()
-        .collect()
+    Struct(&'src str, Vec<(Type, &'src str)>), // struct with fields
+    Other(Token<'src>),
 }
 
 pub fn token_parser<'src>(
@@ -135,6 +112,45 @@ pub fn token_parser<'src>(
         .map_with(|t, extra| (t, extra.span()))
         .padded_by(comment.repeated())
         .padded()
+        .repeated()
+        .collect()
+}
+
+pub fn complex_token_parser<'src, I>(
+) -> impl Parser<'src, I, Vec<(ComplexToken<'src>, Span)>, extra::Err<Rich<'src, Token<'src>>>>
+where
+    I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>,
+{
+    let var_type = select! { Token::TypeName(t) => t };
+    let ident = select! { Token::Ident(ident) => ident };
+    let token = select! { token => token };
+
+    // A parser for struct fields.
+    let field = var_type
+        .then(ident)
+        .then_ignore(none_of(Token::Ctrl(';')).repeated())
+        .then_ignore(just(Token::Ctrl(';')));
+
+    // A parser for structs.
+    let _struct = just(Token::Ident("struct"))
+        .then(ident)
+        .then_ignore(just(Token::Ctrl('{')))
+        .then(field.repeated().collect())
+        .map(|((_, name), fields)| ComplexToken::Struct(name, fields));
+
+    // A parser for variable declaration.
+    let variable_declaration = var_type
+        .then(ident)
+        .then_ignore(just(Token::Op("=")))
+        .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
+
+    // If non of our parsers from above worked then just pass the token.
+    let output = _struct
+        .or(variable_declaration)
+        .or(token.map(ComplexToken::Other));
+
+    output
+        .map_with(|t, extra| (t, extra.span()))
         .repeated()
         .collect()
 }

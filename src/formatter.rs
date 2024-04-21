@@ -5,7 +5,7 @@ use convert_case::Casing;
 use crate::{
     config::Config,
     helpers,
-    parser::{self, Statement::*, Type},
+    parser::{self, ComplexToken::*, Type},
     rules::{Case, IndentationRule, NewLineAroundOpenBraceRule},
 };
 
@@ -63,7 +63,7 @@ impl Formatter {
         let tokens: Vec<(parser::Token<'_>, SimpleSpan)> = tokens.unwrap();
 
         // Parse statements.
-        let (statements, errors) = parser::statement_parser()
+        let (statements, errors) = parser::complex_token_parser()
             .parse(tokens.spanned((tokens.len()..tokens.len()).into()))
             .into_output_errors();
 
@@ -281,33 +281,53 @@ impl Formatter {
     /// Checks complex formatting rules that require prior parsing (tokens required).
     fn check_complex_rules(
         &self,
-        statements: Vec<(parser::Statement<'_>, SimpleSpan)>,
+        statements: Vec<(parser::ComplexToken<'_>, SimpleSpan)>,
     ) -> Result<(), String> {
         for (statement, _) in statements {
-            if let VariableDeclaration(_type, name) = statement {
-                if self.config.local_variable_case.is_some() {
-                    // Check case.
-                    match Self::is_case_different(name, self.config.local_variable_case.unwrap()) {
-                        Ok(_) => {}
-                        Err(correct) => {
-                            return Err(format!(
-                                "variable \"{}\" has incorrect case, the correct case is \"{}\"",
-                                name, correct
-                            ));
-                        }
+            match statement {
+                VariableDeclaration(_type, name) => {
+                    self.check_variable_name(name, _type)?;
+                }
+                Struct(_, fields) => {
+                    for (field_type, field_name) in fields {
+                        self.check_variable_name(field_name, field_type)?;
                     }
                 }
+                Other(_) => {}
+            }
+        }
 
-                if _type == Type::Bool && self.config.bool_prefix.is_some() {
-                    Self::check_prefix(name, self.config.bool_prefix.as_ref().unwrap())?
-                }
-                if _type == Type::Integer && self.config.int_prefix.is_some() {
-                    Self::check_prefix(name, self.config.int_prefix.as_ref().unwrap())?
-                }
-                if _type == Type::Float && self.config.float_prefix.is_some() {
-                    Self::check_prefix(name, self.config.float_prefix.as_ref().unwrap())?
+        Ok(())
+    }
+
+    /// Checks various complex formatting rules on the specified variable.
+    ///
+    /// # Return
+    /// `Ok` if the name is correct (according to the rules), otherwise `Err` that container
+    /// an error message with suggestions according to the rules.
+    fn check_variable_name(&self, name: &str, _type: Type) -> Result<(), String> {
+        // Check case.
+        if self.config.local_variable_case.is_some() {
+            match Self::is_case_different(name, self.config.local_variable_case.unwrap()) {
+                Ok(_) => {}
+                Err(correct) => {
+                    return Err(format!(
+                        "variable \"{}\" has incorrect case, the correct case is \"{}\"",
+                        name, correct
+                    ));
                 }
             }
+        }
+
+        // Check prefixes.
+        if _type == Type::Bool && self.config.bool_prefix.is_some() {
+            Self::check_prefix(name, self.config.bool_prefix.as_ref().unwrap())?
+        }
+        if _type == Type::Integer && self.config.int_prefix.is_some() {
+            Self::check_prefix(name, self.config.int_prefix.as_ref().unwrap())?
+        }
+        if _type == Type::Float && self.config.float_prefix.is_some() {
+            Self::check_prefix(name, self.config.float_prefix.as_ref().unwrap())?
         }
 
         Ok(())

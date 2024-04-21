@@ -55,17 +55,65 @@ mod tests {
         let formatter = Formatter::new(config);
 
         let path_to_res = get_project_root().join("tests").join(test_dir);
+
+        let mut paths_to_fail = Vec::new();
+        let mut paths_to_success = Vec::new();
+
         let path_to_fail = path_to_res.join("fail.hlsl");
         let path_to_success = path_to_res.join("success.hlsl");
 
-        assert!(path_to_fail.exists());
-        assert!(!path_to_fail.is_dir());
-        assert!(path_to_success.exists());
-        assert!(!path_to_success.is_dir());
+        if !path_to_fail.exists() {
+            assert!(
+                path_to_res.join("fail1.hlsl").exists(),
+                "`fail` file should exist or there must be `fail1`, `fail2` and etc files"
+            );
+
+            // Add fail files.
+            let mut test_file_number = 1usize;
+            loop {
+                // Check if exists.
+                let path = path_to_res.join(format!("fail{}.hlsl", test_file_number));
+                if !path.exists() {
+                    break;
+                }
+
+                // Add.
+                paths_to_fail.push(path);
+                test_file_number += 1;
+            }
+
+            // Add success files.
+            test_file_number = 1usize;
+            loop {
+                // Check if exists.
+                let path = path_to_res.join(format!("success{}.hlsl", test_file_number));
+                if !path.exists() {
+                    break;
+                }
+
+                // Add.
+                paths_to_success.push(path);
+                test_file_number += 1;
+            }
+        } else {
+            paths_to_fail.push(path_to_fail);
+            paths_to_success.push(path_to_success);
+        }
+
+        assert!(!paths_to_fail.is_empty() && !paths_to_success.is_empty());
+
+        for path in &paths_to_fail {
+            assert!(path.exists());
+            assert!(!path.is_dir());
+        }
+        for path in &paths_to_success {
+            assert!(path.exists());
+            assert!(!path.is_dir());
+        }
 
         // Test fail.
-        {
-            let input = std::fs::read_to_string(path_to_fail).unwrap();
+        for path in paths_to_fail {
+            let input = std::fs::read_to_string(path).unwrap();
 
             match formatter.format(&input) {
                 Ok(_) => panic!("expected the test to fail"),
@@ -74,8 +122,8 @@ mod tests {
         }
 
         // Test success.
-        {
-            let input = std::fs::read_to_string(path_to_success).unwrap();
+        for path in paths_to_success {
+            let input = std::fs::read_to_string(path).unwrap();
 
             match formatter.format(&input) {
                 Ok(_) => {}
