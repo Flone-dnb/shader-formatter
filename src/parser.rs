@@ -32,11 +32,25 @@ impl std::fmt::Display for Token<'_> {
     }
 }
 
+/// Groups parsed information about a struct.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructInfo<'src> {
+    pub name: &'src str,
+    pub fields: Vec<(Type, &'src str)>,
+}
+
+/// Groups parsed information about a function.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FunctionInfo<'src> {
+    pub name: &'src str,
+    pub args: Vec<(Type, &'src str)>,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ComplexToken<'src> {
     VariableDeclaration(Type, &'src str),
-    Struct(&'src str, Vec<(Type, &'src str)>), // struct with fields
-    Function(&'src str, Vec<(Type, &'src str)>), // function with arguments
+    Struct(StructInfo<'src>),
+    Function(FunctionInfo<'src>),
     Other(Token<'src>),
 }
 
@@ -149,7 +163,7 @@ where
         .then(ident)
         .then_ignore(just(Token::Ctrl('{')))
         .then(field.repeated().collect())
-        .map(|((_, name), fields)| ComplexToken::Struct(name, fields));
+        .map(|((_, name), fields)| ComplexToken::Struct(StructInfo { name, fields }));
 
     // A parser for variable declaration.
     let variable_declaration = var_type
@@ -168,7 +182,7 @@ where
         .ignore_then(ident)
         .then_ignore(just(Token::Ctrl('(')))
         .then(argument.repeated().collect())
-        .map(|(name, args)| ComplexToken::Function(name, args));
+        .map(|(name, args)| ComplexToken::Function(FunctionInfo { name, args }));
 
     // If non of our parsers from above worked then just pass the token.
     let output = _struct

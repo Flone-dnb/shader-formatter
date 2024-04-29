@@ -288,21 +288,21 @@ impl Formatter {
                 VariableDeclaration(_type, name) => {
                     self.check_variable_name(name, _type)?;
                 }
-                Struct(struct_name, fields) => {
+                Struct(info) => {
                     if let Some(case) = self.config.struct_case {
-                        Self::check_name_case(struct_name, case)?;
+                        Self::check_name_case(info.name, case)?;
                     }
 
-                    for (field_type, field_name) in fields {
+                    for (field_type, field_name) in info.fields {
                         self.check_variable_name(field_name, field_type)?;
                     }
                 }
-                Function(func_name, args) => {
+                Function(info) => {
                     if let Some(case) = self.config.function_case {
-                        Self::check_name_case(func_name, case)?;
+                        Self::check_name_case(info.name, case)?;
                     }
 
-                    for (arg_type, arg_name) in args {
+                    for (arg_type, arg_name) in info.args {
                         self.check_variable_name(arg_name, arg_type)?;
                     }
                 }
