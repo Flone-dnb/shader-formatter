@@ -12,7 +12,7 @@ Here is an example `shader-formatter.toml` file:
 Indentation = "FourSpaces"
 MaxEmptyLines = 1
 SpacesInBrackets = true
-LocalVariableCase = "Camel"
+VariableCase = "Camel"
 ```
 
 Below is the list of all possible formatting rules that you can describe in your `shader-formatter.toml`:
