@@ -5,7 +5,7 @@ use convert_case::Casing;
 use crate::{
     config::Config,
     helpers,
-    parser::{self, ComplexToken::*, Token, Type},
+    parser::{self, ComplexToken::*, FunctionInfo, Token, Type},
     rules::{Case, IndentationRule, NewLineAroundOpenBraceRule},
 };
 
@@ -323,10 +323,12 @@ impl Formatter {
                 Struct(info) => {
                     is_global_scope = false;
 
+                    // Check name case.
                     if let Some(case) = self.config.struct_case {
                         Self::check_name_case(info.name, case)?;
                     }
 
+                    // Check fields.
                     for (field_type, field_name) in info.fields {
                         self.check_variable_name(field_name, field_type, is_global_scope)?;
                     }
@@ -337,10 +339,17 @@ impl Formatter {
                     is_global_scope = false;
                     scope_nesting_count = 0;
 
+                    // Check docs.
+                    if self.config.require_docs_on_functions {
+                        Self::check_function_docs(&info)?;
+                    }
+
+                    // Check name case.
                     if let Some(case) = self.config.function_case {
                         Self::check_name_case(info.name, case)?;
                     }
 
+                    // Check args.
                     for (arg_type, arg_name) in info.args {
                         self.check_variable_name(arg_name, arg_type, is_global_scope)?;
                     }
@@ -464,6 +473,94 @@ impl Formatter {
 
         if test != converted_str {
             return Err(converted_str);
+        }
+
+        Ok(())
+    }
+
+    /// Checks that the documentation for the specified function is written for return type and all arguments.
+    ///
+    /// # Return
+    /// `Ok` if docs are correct, otherwise `Err` with a meaningful message about incorrect docs.
+    fn check_function_docs(func_info: &FunctionInfo) -> Result<(), String> {
+        // Make sure docs are not empty.
+        if func_info.docs.is_empty() {
+            return Err(format!(
+                "expected to find documentation for the function \"{}\"",
+                func_info.name
+            ));
+        }
+
+        // Make sure docs are using ASCII characters since we will use `find` on bytes not chars.
+        if !func_info.docs.is_ascii() {
+            return Err(format!(
+                "expected the documentation for the function \"{}\" to only use ASCII characters",
+                func_info.name
+            ));
+        }
+
+        // Check return docs.
+        let return_doc_pos = func_info.docs.find("@return");
+        if func_info.return_type != Type::Void {
+            if return_doc_pos.is_none() {
+                return Err(format!(
+                    "expected to find documentation of the return value for the function \"{}\"",
+                    func_info.name
+                ));
+            }
+        } else if return_doc_pos.is_some() {
+            // Make sure there is no "return" docs (since it's void).
+            return Err(format!(
+                "found documentation of the VOID return value for the function \"{}\"",
+                func_info.name
+            ));
+        }
+
+        // Collect all args written in the docs.
+        let param_keyword = "@param ";
+        let mut documented_args: Vec<String> = Vec::new();
+        let found_arg_docs: Vec<_> = func_info.docs.match_indices(param_keyword).collect();
+        let docs_as_bytes = func_info.docs.as_bytes();
+        for (pos, _) in found_arg_docs {
+            let mut current_pos = pos + param_keyword.len();
+            let mut arg_name = String::new();
+
+            while current_pos < docs_as_bytes.len() {
+                let _char = docs_as_bytes[current_pos];
+                if _char as char == ' ' {
+                    if arg_name.is_empty() {
+                        current_pos += 1;
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+
+                arg_name += &(_char as char).to_string();
+                current_pos += 1;
+            }
+
+            documented_args.push(arg_name);
+        }
+
+        // Check argument docs.
+        for (_, arg_name) in &func_info.args {
+            if !documented_args.iter().any(|name| name == arg_name) {
+                return Err(format!(
+                    "expected to find documentation for the argument \"{}\" of the function \"{}\"",
+                    arg_name, func_info.name
+                ));
+            }
+        }
+
+        // Check if there are argument comments that don't reference an actual argument.
+        for doc_arg_name in documented_args {
+            if !func_info.args.iter().any(|(_, name)| name == &doc_arg_name) {
+                return Err(format!(
+                    "found documentation for a non-existing argument \"{}\" of the function \"{}\"",
+                    doc_arg_name, func_info.name
+                ));
+            }
         }
 
         Ok(())

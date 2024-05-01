@@ -24,6 +24,7 @@ pub enum Token<'src> {
     TypeName(Type),
     Ident(&'src str),
     Preprocessor(&'src str, &'src str),
+    Comment(&'src str),
 }
 
 impl std::fmt::Display for Token<'_> {
@@ -44,6 +45,8 @@ pub struct StructInfo<'src> {
 pub struct FunctionInfo<'src> {
     pub name: &'src str,
     pub args: Vec<(Type, &'src str)>,
+    pub return_type: Type,
+    pub docs: String,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -123,25 +126,30 @@ pub fn token_parser<'src>(
         _ => Token::Ident(ident),
     });
 
+    // Parsers for comments.
+    let simple_comment = just("//")
+        .or(just("///"))
+        .ignore_then(any().and_is(just("\n").not()).repeated().to_slice())
+        .map(Token::Comment);
+    let c_comment = just("/**")
+        .or(just("/*!"))
+        .ignore_then(any().and_is(just("*/").not()).repeated().to_slice())
+        .then_ignore(just("*/"))
+        .map(Token::Comment);
+    let comment = c_comment.or(simple_comment);
+
     // A single token can be one of the above.
     let token = preprocessor
         .or(float)
         .or(integer)
+        .or(comment)
         .or(single_char_operator)
         .or(multi_char_operator)
         .or(ctrl)
         .or(ident);
 
-    let comment = just("//")
-        .then(any().and_is(just('\n').not()).repeated())
-        .padded()
-        .or(just("/**")
-            .then(any().and_is(just("*/").not()).repeated())
-            .padded());
-
     token
         .map_with(|t, extra| (t, extra.span()))
-        .padded_by(comment.repeated())
         .padded()
         .repeated()
         .collect()
@@ -154,6 +162,7 @@ where
 {
     let var_type = select! { Token::TypeName(t) => t };
     let ident = select! { Token::Ident(ident) => ident };
+    let comment = select! { Token::Comment(c) => c};
     let token = select! { token => token };
 
     // A parser for struct fields.
@@ -185,12 +194,22 @@ where
         .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))));
 
     // A parser for functions.
-    let function = var_type
-        .ignore_then(ident)
+    let function = comment
+        .repeated()
+        .collect::<Vec<&str>>()
+        .then(var_type)
+        .then(ident)
         .then_ignore(just(Token::Ctrl('(')))
         .then(argument.repeated().collect())
         .then_ignore(just(Token::Ctrl(')')).or_not())
-        .map(|(name, args)| ComplexToken::Function(FunctionInfo { name, args }));
+        .map(|(((opt_comments, return_type), name), args)| {
+            ComplexToken::Function(FunctionInfo {
+                name,
+                args,
+                return_type,
+                docs: opt_comments.concat(),
+            })
+        });
 
     // If non of our parsers from above worked then just pass the token.
     let output = _struct

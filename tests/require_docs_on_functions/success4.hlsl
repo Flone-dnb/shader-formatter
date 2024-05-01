@@ -1,0 +1,4 @@
+// Function docs.
+void foo() {
+	
+}

@@ -19,6 +19,7 @@ pub struct Config {
     pub int_prefix: Option<String>,
     pub float_prefix: Option<String>,
     pub global_variable_prefix: Option<String>,
+    pub require_docs_on_functions: bool,
 }
 
 impl Default for Config {
@@ -35,6 +36,7 @@ impl Default for Config {
             int_prefix: None,
             float_prefix: None,
             global_variable_prefix: None,
+            require_docs_on_functions: false,
         }
     }
 }
@@ -145,6 +147,9 @@ impl Config {
                 "GlobalVariablePrefix" => {
                     config.global_variable_prefix =
                         Some(Self::toml_value_to_string(&key, &value)?.to_string());
+                }
+                "RequireDocsOnFunctions" => {
+                    config.require_docs_on_functions = Self::toml_value_to_bool(&key, &value)?;
                 }
                 _ => return Err(format!("found unknown rule \"{}\"", key)),
             }

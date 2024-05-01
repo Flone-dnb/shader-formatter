@@ -40,6 +40,25 @@ Below are the rules that are not checked unless they are specified in your confi
 - **IntPrefix** (string) - defines required prefix for integer variables, for example if this rule is set to `i` then a correct variable may look like this: `iValue`.
 - **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.
 - **GlobalVariablePrefix** (string) - defines required prefix for global variables, this rule is applied before other prefix and case rules so you can have a "mixed" global variables names like "g_iMyVariable" where global prefix is "g_", int prefix is "i" and case is "Camel".
+- **RequireDocsOnFunctions** (bool) - defines whether documentation comments on functions are required or not. Here are a few examples of documentation comments:
+
+```
+/**
+* Function docs.
+*
+* @param value Input value docs.
+*
+* @return Return value docs.
+*/
+int foo(int value) {}
+
+// Function docs.
+// 
+// @param value Input value docs.
+// 
+// @return Return value docs.
+int foo(int value) {}
+```
 
 # Build
 

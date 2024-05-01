@@ -244,4 +244,18 @@ mod tests {
         // Test.
         test_complex_rules(config, "global_variable_prefix");
     }
+
+    #[test]
+    fn require_docs_on_functions() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(!config.require_docs_on_functions);
+
+        // Change the setting.
+        config.require_docs_on_functions = true;
+
+        // Test.
+        test_complex_rules(config, "require_docs_on_functions");
+    }
 }
