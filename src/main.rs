@@ -10,10 +10,22 @@ mod parser;
 mod rules;
 mod tests;
 
+const PRINT_TOKENS_ARG: &str = "--print-tokens";
+
 fn main() -> ExitCode {
     // Make sure a path is specified.
-    if std::env::args().len() <= 1 {
+    if std::env::args().len() == 1 {
         println!("expected a path to be specified");
+        println!("usage:");
+        println!(
+            "{} <path to file> <options>",
+            std::env::args().next().unwrap()
+        );
+        println!("available options:");
+        println!(
+            "\"{}\" - prints parsed tokens (used for debugging)",
+            PRINT_TOKENS_ARG
+        );
         return ExitCode::FAILURE;
     }
 
@@ -21,6 +33,13 @@ fn main() -> ExitCode {
     let Some(path) = std::env::args().nth(1) else {
         println!("expected a path to be specified");
         return ExitCode::FAILURE;
+    };
+
+    // See if we need to print tokens.
+    let print_tokens = if let Some(additional_option) = std::env::args().nth(2) {
+        additional_option == PRINT_TOKENS_ARG
+    } else {
+        false
     };
 
     // Make sure it's a file.
@@ -50,7 +69,7 @@ fn main() -> ExitCode {
 
     // Format code.
     let formatter = Formatter::new(config);
-    let output = match formatter.format(&file_content) {
+    let output = match formatter.format(&file_content, print_tokens) {
         Ok(o) => o,
         Err(msg) => {
             println!("{}", msg);

@@ -41,7 +41,7 @@ mod tests {
         let input = std::fs::read_to_string(path_to_input).unwrap();
         let output = std::fs::read_to_string(path_to_output).unwrap();
 
-        let result = match formatter.format(&input) {
+        let result = match formatter.format(&input, false) {
             Ok(s) => s,
             Err(msg) => {
                 panic!("{}", msg);
@@ -113,10 +113,10 @@ mod tests {
 
         // Test fail.
         for path in paths_to_fail {
-            let input = std::fs::read_to_string(path).unwrap();
+            let input = std::fs::read_to_string(path.clone()).unwrap();
 
-            match formatter.format(&input) {
-                Ok(_) => panic!("expected the test to fail"),
+            match formatter.format(&input, false) {
+                Ok(_) => panic!("expected the test to fail (file {})", path.display()),
                 Err(msg) => assert!(msg.starts_with(CHANGES_REQUIRED_ERR_MSG)),
             }
         }
@@ -125,7 +125,7 @@ mod tests {
         for path in paths_to_success {
             let input = std::fs::read_to_string(path).unwrap();
 
-            match formatter.format(&input) {
+            match formatter.format(&input, false) {
                 Ok(_) => {}
                 Err(msg) => panic!("{}", msg),
             }

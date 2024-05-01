@@ -30,10 +30,14 @@ impl Formatter {
 
     /// Formats the specified content according to the formatting rules from config.
     ///
+    /// # Arguments
+    /// - `content` Text to format.
+    /// - `print_tokens` Defines whether or not to print parsed token to stdout (used for debugging).
+    ///
     /// # Return
     /// `Ok(String)` if successful with formatted content, otherise `Err(String)` with a meaningful
     /// error message.
-    pub fn format(&self, content: &str) -> Result<String, String> {
+    pub fn format(&self, content: &str, print_tokens: bool) -> Result<String, String> {
         // Apply rules that don't need tokens.
         let output = self.apply_simple_rules(content);
 
@@ -62,8 +66,19 @@ impl Formatter {
         }
         let tokens: Vec<(parser::Token<'_>, SimpleSpan)> = tokens.unwrap();
 
+        // Print tokens if needed.
+        if print_tokens {
+            println!("parsed tokens:");
+            for token in &tokens {
+                let (line, column) =
+                    helpers::span_offset_to_line_and_column(token.1.start, content);
+                println!("[line {}, column {}] {}", line, column, token.0);
+            }
+            println!("------------------------------------\n");
+        }
+
         // Parse statements.
-        let (statements, errors) = parser::complex_token_parser()
+        let (complex_tokens, errors) = parser::complex_token_parser()
             .parse(tokens.spanned((tokens.len()..tokens.len()).into()))
             .into_output_errors();
 
@@ -80,12 +95,26 @@ impl Formatter {
             }
         }
 
-        match statements {
+        match complex_tokens {
             None => Ok(output), // nothing to do here
-            Some(statements) => match self.check_complex_rules(statements) {
-                Ok(_) => Ok(output), // everything is fine
-                Err(msg) => Err(format!("{}: {}", CHANGES_REQUIRED_ERR_MSG, msg)),
-            },
+            Some(tokens) => {
+                // Print tokens if needed.
+                if print_tokens {
+                    println!("parsed complex tokens:");
+                    for token in &tokens {
+                        let (line, column) =
+                            helpers::span_offset_to_line_and_column(token.1.start, content);
+                        println!("[line {}, column {}] {}", line, column, token.0);
+                    }
+                    println!("------------------------------------\n");
+                }
+
+                // Check rules.
+                match self.check_complex_rules(tokens) {
+                    Ok(_) => Ok(output), // everything is fine
+                    Err(msg) => Err(format!("{}: {}", CHANGES_REQUIRED_ERR_MSG, msg)),
+                }
+            }
         }
     }
 

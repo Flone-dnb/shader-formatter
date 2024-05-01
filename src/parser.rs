@@ -44,6 +44,7 @@ pub struct StructInfo<'src> {
 pub struct FunctionInfo<'src> {
     pub name: &'src str,
     pub args: Vec<(Type, &'src str)>,
+    pub body: Vec<ComplexToken<'src>>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -52,6 +53,12 @@ pub enum ComplexToken<'src> {
     Struct(StructInfo<'src>),
     Function(FunctionInfo<'src>),
     Other(Token<'src>),
+}
+
+impl std::fmt::Display for ComplexToken<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 pub fn token_parser<'src>(
@@ -163,6 +170,7 @@ where
         .then(ident)
         .then_ignore(just(Token::Ctrl('{')))
         .then(field.repeated().collect())
+        .then_ignore(just(Token::Ctrl('}')).or_not())
         .map(|((_, name), fields)| ComplexToken::Struct(StructInfo { name, fields }));
 
     // A parser for variable declaration.
@@ -182,7 +190,14 @@ where
         .ignore_then(ident)
         .then_ignore(just(Token::Ctrl('(')))
         .then(argument.repeated().collect())
-        .map(|(name, args)| ComplexToken::Function(FunctionInfo { name, args }));
+        .then_ignore(just(Token::Ctrl(')')).or_not())
+        .map(|(name, args)| {
+            ComplexToken::Function(FunctionInfo {
+                name,
+                args,
+                body: Vec::new(),
+            })
+        });
 
     // If non of our parsers from above worked then just pass the token.
     let output = _struct
