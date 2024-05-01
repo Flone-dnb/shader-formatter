@@ -1,0 +1,1 @@
+int iGlobalShift<some_meta>;

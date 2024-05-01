@@ -44,7 +44,6 @@ pub struct StructInfo<'src> {
 pub struct FunctionInfo<'src> {
     pub name: &'src str,
     pub args: Vec<(Type, &'src str)>,
-    pub body: Vec<ComplexToken<'src>>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -191,13 +190,7 @@ where
         .then_ignore(just(Token::Ctrl('(')))
         .then(argument.repeated().collect())
         .then_ignore(just(Token::Ctrl(')')).or_not())
-        .map(|(name, args)| {
-            ComplexToken::Function(FunctionInfo {
-                name,
-                args,
-                body: Vec::new(),
-            })
-        });
+        .map(|(name, args)| ComplexToken::Function(FunctionInfo { name, args }));
 
     // If non of our parsers from above worked then just pass the token.
     let output = _struct

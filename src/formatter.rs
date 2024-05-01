@@ -5,7 +5,7 @@ use convert_case::Casing;
 use crate::{
     config::Config,
     helpers,
-    parser::{self, ComplexToken::*, Type},
+    parser::{self, ComplexToken::*, Token, Type},
     rules::{Case, IndentationRule, NewLineAroundOpenBraceRule},
 };
 
@@ -310,32 +310,59 @@ impl Formatter {
     /// Checks complex formatting rules that require prior parsing (tokens required).
     fn check_complex_rules(
         &self,
-        statements: Vec<(parser::ComplexToken<'_>, SimpleSpan)>,
+        complex_tokens: Vec<(parser::ComplexToken<'_>, SimpleSpan)>,
     ) -> Result<(), String> {
-        for (statement, _) in statements {
-            match statement {
+        let mut is_global_scope = true;
+        let mut scope_nesting_count = 0;
+
+        for (complex_token, _) in complex_tokens {
+            match complex_token {
                 VariableDeclaration(_type, name) => {
-                    self.check_variable_name(name, _type)?;
+                    self.check_variable_name(name, _type, is_global_scope)?;
                 }
                 Struct(info) => {
+                    is_global_scope = false;
+
                     if let Some(case) = self.config.struct_case {
                         Self::check_name_case(info.name, case)?;
                     }
 
                     for (field_type, field_name) in info.fields {
-                        self.check_variable_name(field_name, field_type)?;
+                        self.check_variable_name(field_name, field_type, is_global_scope)?;
                     }
+
+                    is_global_scope = true;
                 }
                 Function(info) => {
+                    is_global_scope = false;
+                    scope_nesting_count = 0;
+
                     if let Some(case) = self.config.function_case {
                         Self::check_name_case(info.name, case)?;
                     }
 
                     for (arg_type, arg_name) in info.args {
-                        self.check_variable_name(arg_name, arg_type)?;
+                        self.check_variable_name(arg_name, arg_type, is_global_scope)?;
                     }
                 }
-                Other(_) => {}
+                Other(token) => {
+                    if !is_global_scope {
+                        if token == Token::Ctrl('{') {
+                            scope_nesting_count += 1;
+                        } else if token == Token::Ctrl('}') {
+                            if scope_nesting_count == 0 {
+                                // Unexpected, we probably have something wrong in other place.
+                                return Err("found '}' but scope nesting counter is already zero"
+                                    .to_owned());
+                            } else {
+                                scope_nesting_count -= 1;
+                                if scope_nesting_count == 0 {
+                                    is_global_scope = true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -347,7 +374,36 @@ impl Formatter {
     /// # Return
     /// `Ok` if the name is correct (according to the rules), otherwise `Err` that container
     /// an error message with suggestions according to the rules.
-    fn check_variable_name(&self, name: &str, _type: Type) -> Result<(), String> {
+    fn check_variable_name(
+        &self,
+        mut name: &str,
+        _type: Type,
+        is_global_scope: bool,
+    ) -> Result<(), String> {
+        // Check global variable prefix.
+        if let Some(global_prefix) = &self.config.global_variable_prefix {
+            // TODO: rework this branch into a single one when Rust's #53667 is resolved
+            if is_global_scope {
+                if !name.starts_with(global_prefix) {
+                    return Err(format!(
+                        "\"{}\" has incorrect prefix because it's a global variable, the correct name is probably \"{}\"",
+                        name, global_prefix.to_owned() + name
+                    ));
+                }
+
+                // Make sure the name is in ASCII because we will create a new slice using bytes not chars.
+                if !name.is_ascii() && !global_prefix.is_ascii() {
+                    return Err(format!(
+                        "expected global prefix rule \"{}\" and \"{}\" to have an ASCII-only name",
+                        global_prefix, name
+                    ));
+                }
+
+                // Remove global prefix from further checks.
+                name = &name[global_prefix.len()..];
+            }
+        }
+
         // Check case.
         if let Some(case) = self.config.variable_case {
             Self::check_name_case(name, case)?

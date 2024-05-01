@@ -226,4 +226,22 @@ mod tests {
         test_complex_rules(config.clone(), "variable_prefix/int");
         test_complex_rules(config, "variable_prefix/float");
     }
+
+    #[test]
+    fn global_variable_prefix() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(config.global_variable_prefix.is_none());
+        assert!(config.int_prefix.is_none());
+        assert!(config.variable_case.is_none());
+
+        // Change the setting.
+        config.global_variable_prefix = Some(String::from("g_"));
+        config.int_prefix = Some(String::from("i"));
+        config.variable_case = Some(Case::Camel);
+
+        // Test.
+        test_complex_rules(config, "global_variable_prefix");
+    }
 }

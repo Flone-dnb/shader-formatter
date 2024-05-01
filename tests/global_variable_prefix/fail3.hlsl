@@ -1,0 +1,1 @@
+int iGlobalVar = 0;
