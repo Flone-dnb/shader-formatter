@@ -1,0 +1,1 @@
+Texture2D myTexture<somemeta>;
