@@ -51,7 +51,7 @@ mod tests {
         assert_eq!(result, output);
     }
 
-    fn test_complex_rules(config: Config, test_dir: &str) {
+    fn test_formatting_fail_success(config: Config, test_dir: &str) {
         let formatter = Formatter::new(config);
 
         let path_to_res = get_project_root().join("tests").join(test_dir);
@@ -62,45 +62,44 @@ mod tests {
         let path_to_fail = path_to_res.join("fail.hlsl");
         let path_to_success = path_to_res.join("success.hlsl");
 
-        if !path_to_fail.exists() {
-            assert!(
-                path_to_res.join("fail1.hlsl").exists(),
-                "`fail` file should exist or there must be `fail1`, `fail2` and etc files"
-            );
+        if !path_to_fail.exists() && !path_to_success.exists() {
+            if path_to_res.join("fail1.hlsl").exists() {
+                // Add fail files.
+                let mut test_file_number = 1usize;
+                loop {
+                    // Check if exists.
+                    let path = path_to_res.join(format!("fail{}.hlsl", test_file_number));
+                    if !path.exists() {
+                        break;
+                    }
 
-            // Add fail files.
-            let mut test_file_number = 1usize;
-            loop {
-                // Check if exists.
-                let path = path_to_res.join(format!("fail{}.hlsl", test_file_number));
-                if !path.exists() {
-                    break;
+                    // Add.
+                    paths_to_fail.push(path);
+                    test_file_number += 1;
                 }
-
-                // Add.
-                paths_to_fail.push(path);
-                test_file_number += 1;
             }
 
-            // Add success files.
-            test_file_number = 1usize;
-            loop {
-                // Check if exists.
-                let path = path_to_res.join(format!("success{}.hlsl", test_file_number));
-                if !path.exists() {
-                    break;
-                }
+            if path_to_res.join("success1.hlsl").exists() {
+                // Add success files.
+                let mut test_file_number = 1usize;
+                loop {
+                    // Check if exists.
+                    let path = path_to_res.join(format!("success{}.hlsl", test_file_number));
+                    if !path.exists() {
+                        break;
+                    }
 
-                // Add.
-                paths_to_success.push(path);
-                test_file_number += 1;
+                    // Add.
+                    paths_to_success.push(path);
+                    test_file_number += 1;
+                }
             }
         } else {
             paths_to_fail.push(path_to_fail);
             paths_to_success.push(path_to_success);
         }
 
-        assert!(!paths_to_fail.is_empty() && !paths_to_success.is_empty());
+        assert!(!paths_to_fail.is_empty() || !paths_to_success.is_empty());
 
         for path in &paths_to_fail {
             assert!(path.exists());
@@ -135,6 +134,12 @@ mod tests {
     #[test]
     fn default_settings() {
         compare_files_in_directory(Config::default(), "default_settings");
+    }
+
+    #[test]
+    fn empty_files() {
+        // Test.
+        test_formatting_fail_success(Config::default(), "empty_files");
     }
 
     #[test]
@@ -176,7 +181,7 @@ mod tests {
         config.variable_case = Some(Case::Camel);
 
         // Test.
-        test_complex_rules(config, "variable_case");
+        test_formatting_fail_success(config, "variable_case");
     }
 
     #[test]
@@ -190,7 +195,7 @@ mod tests {
         config.function_case = Some(Case::Camel);
 
         // Test.
-        test_complex_rules(config, "function_case");
+        test_formatting_fail_success(config, "function_case");
     }
 
     #[test]
@@ -204,7 +209,7 @@ mod tests {
         config.struct_case = Some(Case::Pascal);
 
         // Test.
-        test_complex_rules(config, "struct_case");
+        test_formatting_fail_success(config, "struct_case");
     }
 
     #[test]
@@ -222,9 +227,9 @@ mod tests {
         config.float_prefix = Some(String::from("f"));
 
         // Test.
-        test_complex_rules(config.clone(), "variable_prefix/bool");
-        test_complex_rules(config.clone(), "variable_prefix/int");
-        test_complex_rules(config, "variable_prefix/float");
+        test_formatting_fail_success(config.clone(), "variable_prefix/bool");
+        test_formatting_fail_success(config.clone(), "variable_prefix/int");
+        test_formatting_fail_success(config, "variable_prefix/float");
     }
 
     #[test]
@@ -242,7 +247,7 @@ mod tests {
         config.variable_case = Some(Case::Camel);
 
         // Test.
-        test_complex_rules(config, "global_variable_prefix");
+        test_formatting_fail_success(config, "global_variable_prefix");
     }
 
     #[test]
@@ -256,6 +261,6 @@ mod tests {
         config.require_docs_on_functions = true;
 
         // Test.
-        test_complex_rules(config, "require_docs_on_functions");
+        test_formatting_fail_success(config, "require_docs_on_functions");
     }
 }

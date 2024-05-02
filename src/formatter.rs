@@ -38,6 +38,11 @@ impl Formatter {
     /// `Ok(String)` if successful with formatted content, otherise `Err(String)` with a meaningful
     /// error message.
     pub fn format(&self, content: &str, print_tokens: bool) -> Result<String, String> {
+        // Exit on empty input.
+        if content.is_empty() {
+            return Ok(content.to_owned());
+        }
+
         // Apply rules that don't need tokens.
         let output = self.apply_simple_rules(content);
 
