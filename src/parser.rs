@@ -25,6 +25,7 @@ pub enum Token<'src> {
     Ident(&'src str),
     Preprocessor(&'src str, &'src str),
     Comment(&'src str),
+    Other(char),
 }
 
 impl std::fmt::Display for Token<'_> {
@@ -146,7 +147,8 @@ pub fn token_parser<'src>(
         .or(single_char_operator)
         .or(multi_char_operator)
         .or(ctrl)
-        .or(ident);
+        .or(ident)
+        .or(any().map(Token::Other));
 
     token
         .map_with(|t, extra| (t, extra.span()))
