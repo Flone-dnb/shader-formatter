@@ -141,6 +141,9 @@ impl Formatter {
         let mut is_on_new_line = true;
         let mut ignore_until_text = false;
 
+        let mut last_2_chars = [' '; 2];
+        let mut inside_c_comment: usize = 0;
+
         for _char in content.chars() {
             // Just ignore '\r's.
             if _char == '\r' {
@@ -168,6 +171,10 @@ impl Formatter {
                     is_on_new_line = false;
                     ignore_until_text = false;
                     consecutive_empty_new_line_count = 0;
+
+                    if inside_c_comment > 0 && _char == '*' {
+                        output.push(' ');
+                    }
                 } else {
                     continue;
                 }
@@ -179,6 +186,17 @@ impl Formatter {
                 } else {
                     continue;
                 }
+            }
+
+            // Update last 2 chars.
+            last_2_chars[0] = last_2_chars[1];
+            last_2_chars[1] = _char;
+
+            // Detect a C-comment.
+            if last_2_chars[0] == '/' && last_2_chars[1] == '*' && (_char == '*' || _char == '!') {
+                inside_c_comment += 1;
+            } else if last_2_chars[0] == '*' && last_2_chars[1] == '/' {
+                inside_c_comment = inside_c_comment.saturating_sub(1);
             }
 
             if _char == '{' {

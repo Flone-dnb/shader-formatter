@@ -29,14 +29,14 @@ void test() {
 }
 
 /**
-* This is a comment.
-*/
+ * This is a comment.
+ */
 namespace hello {
     /**
-    * This is a description of the function.
-    *
-    * @remark It does not have any parameters.
-    */
+     * This is a description of the function.
+     *
+     * @remark It does not have any parameters.
+     */
     void foo() {
         // TEST
         int test = 0;

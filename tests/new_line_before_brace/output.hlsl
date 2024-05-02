@@ -25,15 +25,15 @@ float4 main(VertexOut pin) : SV_Target
 }
 
 /**
-* This is a comment.
-*/
+ * This is a comment.
+ */
 namespace hello
 {
     /**
-    * This is a description of the function.
-    *
-    * @remark It does not have any parameters.
-    */
+     * This is a description of the function.
+     *
+     * @remark It does not have any parameters.
+     */
     void foo()
     {
         // TEST
