@@ -20,6 +20,7 @@ pub struct Config {
     pub float_prefix: Option<String>,
     pub global_variable_prefix: Option<String>,
     pub require_docs_on_functions: bool,
+    pub require_docs_on_structs: bool,
 }
 
 impl Default for Config {
@@ -37,6 +38,7 @@ impl Default for Config {
             float_prefix: None,
             global_variable_prefix: None,
             require_docs_on_functions: false,
+            require_docs_on_structs: false,
         }
     }
 }
@@ -150,6 +152,9 @@ impl Config {
                 }
                 "RequireDocsOnFunctions" => {
                     config.require_docs_on_functions = Self::toml_value_to_bool(&key, &value)?;
+                }
+                "RequireDocsOnStructs" => {
+                    config.require_docs_on_structs = Self::toml_value_to_bool(&key, &value)?;
                 }
                 _ => return Err(format!("found unknown rule \"{}\"", key)),
             }

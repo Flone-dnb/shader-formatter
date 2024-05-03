@@ -60,6 +60,8 @@ int foo(int value) {}
 int foo(int value) {}
 ```
 
+- **RequireDocsOnStructs** (bool) - defines whether documentation comments on structs are required or not.
+
 # Build
 
 To build the tool you will need [Rust](https://www.rust-lang.org/tools/install).

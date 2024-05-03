@@ -39,6 +39,7 @@ impl std::fmt::Display for Token<'_> {
 pub struct StructInfo<'src> {
     pub name: &'src str,
     pub fields: Vec<(Type, &'src str)>,
+    pub docs: String,
 }
 
 /// Groups parsed information about a function.
@@ -174,14 +175,25 @@ where
         .then_ignore(just(Token::Ctrl(';')));
 
     // A parser for structs.
-    let _struct = just(Token::Ident("struct"))
-        .or(just(Token::Ident("uniform")))
-        .or(just(Token::Ident("buffer")))
+    let _struct = comment
+        .repeated()
+        .collect::<Vec<&str>>()
+        .then_ignore(
+            just(Token::Ident("struct"))
+                .or(just(Token::Ident("uniform")))
+                .or(just(Token::Ident("buffer"))),
+        )
         .then(ident)
         .then_ignore(just(Token::Ctrl('{')))
         .then(field.repeated().collect())
         .then_ignore(just(Token::Ctrl('}')).or_not())
-        .map(|((_, name), fields)| ComplexToken::Struct(StructInfo { name, fields }));
+        .map(|((opt_comments, name), fields)| {
+            ComplexToken::Struct(StructInfo {
+                name,
+                fields,
+                docs: opt_comments.concat(),
+            })
+        });
 
     // A parser for variable declaration.
     let variable_declaration = var_type

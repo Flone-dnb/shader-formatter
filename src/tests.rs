@@ -263,4 +263,18 @@ mod tests {
         // Test.
         test_formatting_fail_success(config, "require_docs_on_functions");
     }
+
+    #[test]
+    fn require_docs_on_structs() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(!config.require_docs_on_structs);
+
+        // Change the setting.
+        config.require_docs_on_structs = true;
+
+        // Test.
+        test_formatting_fail_success(config, "require_docs_on_structs");
+    }
 }

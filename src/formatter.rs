@@ -5,7 +5,7 @@ use convert_case::Casing;
 use crate::{
     config::Config,
     helpers,
-    parser::{self, ComplexToken::*, FunctionInfo, Token, Type},
+    parser::{self, ComplexToken::*, FunctionInfo, StructInfo, Token, Type},
     rules::{Case, IndentationRule, NewLineAroundOpenBraceRule},
 };
 
@@ -335,6 +335,7 @@ impl Formatter {
         &self,
         complex_tokens: Vec<(parser::ComplexToken<'_>, SimpleSpan)>,
     ) -> Result<(), String> {
+        // Prepare some variables to determine if we are inside of a global scope or inside of some function.
         let mut is_global_scope = true;
         let mut scope_nesting_count = 0;
 
@@ -345,6 +346,11 @@ impl Formatter {
                 }
                 Struct(info) => {
                     is_global_scope = false;
+
+                    // Check docs.
+                    if self.config.require_docs_on_structs {
+                        Self::check_struct_docs(&info)?;
+                    }
 
                     // Check name case.
                     if let Some(case) = self.config.struct_case {
@@ -584,6 +590,22 @@ impl Formatter {
                     doc_arg_name, func_info.name
                 ));
             }
+        }
+
+        Ok(())
+    }
+
+    /// Checks that the documentation for the specified struct is written correctly or not.
+    ///
+    /// # Return
+    /// `Ok` if docs are correct, otherwise `Err` with a meaningful message about incorrect docs.
+    fn check_struct_docs(struct_info: &StructInfo) -> Result<(), String> {
+        // Make sure docs are not empty.
+        if struct_info.docs.is_empty() {
+            return Err(format!(
+                "expected to find documentation for the struct \"{}\"",
+                struct_info.name
+            ));
         }
 
         Ok(())
