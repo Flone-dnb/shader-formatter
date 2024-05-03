@@ -277,4 +277,18 @@ mod tests {
         // Test.
         test_formatting_fail_success(config, "require_docs_on_structs");
     }
+
+    #[test]
+    fn indent_preprocessor() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(!config.indent_preprocessor);
+
+        // Change the setting.
+        config.indent_preprocessor = true;
+
+        // Test.
+        compare_files_in_directory(config, "indent_preprocessor");
+    }
 }

@@ -26,20 +26,7 @@ Below is the list of all possible formatting rules that you can describe in your
     - Before
 - **MaxEmptyLines** (unsigned integer) - defines how much consecutive empty lines to keep.
 - **SpacesInBrackets** (boolean) - defines whether or not to add spaces between `(` and `)`, `[` and `]`, `<` and `>`, for example: if enabled converts `foo(param1, param2)` to `foo( param1, param2 )`.
-
-Below are the rules that are not checked unless they are specified in your configuration file:
-
-- **VariableCase** (string) - defines case style for variables.
-    - Camel
-    - Pascal
-    - Snake
-    - UpperSnake
-- **FunctionCase** (string) - defines case style for functions (options are the same as in "variable case" rule).
-- **StructCase** (string) - defines case style for structs (options are the same as in "variable case" rule).
-- **BoolPrefix** (string) - defines required prefix for `bool` variables, for example if this rule is set to `b` then a correct variable may look like this: `bValue`.
-- **IntPrefix** (string) - defines required prefix for integer variables, for example if this rule is set to `i` then a correct variable may look like this: `iValue`.
-- **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.
-- **GlobalVariablePrefix** (string) - defines required prefix for global variables, this rule is applied before other prefix and case rules so you can have a "mixed" global variables names like "g_iMyVariable" where global prefix is "g_", int prefix is "i" and case is "Camel".
+- **IndentPreprocessor** (bool) - defines if preprocessor directives will be indented or not.
 - **RequireDocsOnFunctions** (bool) - defines whether documentation comments on functions are required or not. Here are a few examples of documentation comments:
 
 ```
@@ -61,6 +48,20 @@ int foo(int value) {}
 ```
 
 - **RequireDocsOnStructs** (bool) - defines whether documentation comments on structs are required or not.
+
+Below are the rules that are not checked unless they are specified in your configuration file:
+
+- **VariableCase** (string) - defines case style for variables.
+    - Camel
+    - Pascal
+    - Snake
+    - UpperSnake
+- **FunctionCase** (string) - defines case style for functions (options are the same as in "variable case" rule).
+- **StructCase** (string) - defines case style for structs (options are the same as in "variable case" rule).
+- **BoolPrefix** (string) - defines required prefix for `bool` variables, for example if this rule is set to `b` then a correct variable may look like this: `bValue`.
+- **IntPrefix** (string) - defines required prefix for integer variables, for example if this rule is set to `i` then a correct variable may look like this: `iValue`.
+- **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.
+- **GlobalVariablePrefix** (string) - defines required prefix for global variables, this rule is applied before other prefix and case rules so you can have a "mixed" global variables names like "g_iMyVariable" where global prefix is "g_", int prefix is "i" and case is "Camel".
 
 # Build
 

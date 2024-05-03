@@ -172,7 +172,22 @@ impl Formatter {
                     ignore_until_text = false;
                     consecutive_empty_new_line_count = 0;
 
+                    if _char == '#' && !self.config.indent_preprocessor {
+                        // Remove everything until the beginning of the line.
+                        let mut chars_to_remove = 0;
+                        for check in output.chars().rev() {
+                            if check != ' ' && check != '\t' {
+                                break;
+                            }
+                            chars_to_remove += 1;
+                        }
+                        for _ in 0..chars_to_remove {
+                            output.pop();
+                        }
+                    }
+
                     if inside_c_comment > 0 && _char == '*' {
+                        // Add a single space for C-style comments to look good.
                         output.push(' ');
                     }
                 } else {

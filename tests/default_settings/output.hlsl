@@ -7,6 +7,7 @@ float4 main(VertexOut pin) : SV_Target {
         int invalidCase = 2;
     }
     
+#define FOO
     if (test == -1) {
         if (true) {
             // TODO
