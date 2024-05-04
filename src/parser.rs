@@ -23,7 +23,6 @@ pub enum Token<'src> {
     Ctrl(char),
     TypeName(Type),
     Ident(&'src str),
-    Preprocessor(&'src str, &'src str),
     Comment(&'src str),
     Other(char),
 }
@@ -98,19 +97,6 @@ pub fn token_parser<'src>(
     // A parser for control characters (delimiters, semicolons, etc.)
     let ctrl = one_of("()[]{};,:<>.").map(Token::Ctrl);
 
-    // A parser for preprocessor directives.
-    let preprocessor = just('#')
-        .ignore_then(
-            any()
-                .and_is(just(' ').not())
-                .repeated()
-                .to_slice()
-                .padded()
-                .then(any().and_is(just('\n').not()).repeated().to_slice())
-                .map(|(keyword, value)| Token::Preprocessor(keyword, value)),
-        )
-        .padded();
-
     // A parser for identifiers and keywords
     let ident = text::ascii::ident().map(|ident: &str| match ident {
         "true" => Token::Bool(true),
@@ -141,8 +127,7 @@ pub fn token_parser<'src>(
     let comment = c_comment.or(simple_comment);
 
     // A single token can be one of the above.
-    let token = preprocessor
-        .or(float)
+    let token = float
         .or(integer)
         .or(comment)
         .or(single_char_operator)
