@@ -140,9 +140,10 @@ impl Formatter {
         let mut consecutive_empty_new_line_count: usize = 0;
         let mut is_on_new_line = true;
         let mut ignore_until_text = false;
-
-        let mut last_2_chars = [' '; 2];
+        let mut last_3_chars = [' '; 3];
         let mut inside_c_comment: usize = 0;
+        let mut inside_comment = false;
+        let mut preproc_add_nesting_on_next_line = false;
 
         for _char in content.chars() {
             // Just ignore '\r's.
@@ -153,6 +154,11 @@ impl Formatter {
             // Handle new line.
             if _char == '\n' {
                 is_on_new_line = true;
+
+                if preproc_add_nesting_on_next_line {
+                    nesting_count += 1;
+                    preproc_add_nesting_on_next_line = false;
+                }
 
                 if !ignore_until_text
                     && consecutive_empty_new_line_count <= self.config.max_empty_lines
@@ -166,6 +172,8 @@ impl Formatter {
             }
 
             if is_on_new_line {
+                inside_comment = false;
+
                 // Find where text starts.
                 if _char != ' ' && _char != '\t' {
                     is_on_new_line = false;
@@ -203,16 +211,61 @@ impl Formatter {
                 }
             }
 
-            // Update last 2 chars.
-            last_2_chars[0] = last_2_chars[1];
-            last_2_chars[1] = _char;
-
             // Detect a C-comment.
-            if last_2_chars[0] == '/' && last_2_chars[1] == '*' && (_char == '*' || _char == '!') {
+            if last_3_chars[1] == '/' && last_3_chars[2] == '*' && (_char == '*' || _char == '!') {
                 inside_c_comment += 1;
-            } else if last_2_chars[0] == '*' && last_2_chars[1] == '/' {
+            } else if last_3_chars[1] == '*' && last_3_chars[2] == '/' {
                 inside_c_comment = inside_c_comment.saturating_sub(1);
             }
+
+            if self.config.preprocessor_if_creates_nesting
+                && self.config.indent_preprocessor
+                && !inside_comment
+            {
+                if last_3_chars[1] == '#' && last_3_chars[2] == 'i' && _char == 'f' {
+                    preproc_add_nesting_on_next_line = true;
+                } else if (last_3_chars[0] == '#' && last_3_chars[1] == 'e')
+                    && ((last_3_chars[2] == 'n' && _char == 'd')
+                        || (last_3_chars[2] == 'l' && _char == 'i')
+                        || (last_3_chars[2] == 'l' && _char == 's'))
+                {
+                    // Remove everything until the beginning of the line.
+                    let mut chars_to_remove = last_3_chars.len(); // skip already added chars
+                    for check in output.chars().rev().skip(last_3_chars.len()) {
+                        if check != ' ' && check != '\t' {
+                            break;
+                        }
+                        chars_to_remove += 1;
+                    }
+                    for _ in 0..chars_to_remove {
+                        output.pop();
+                    }
+
+                    // Decrease nesting.
+                    nesting_count = nesting_count.saturating_sub(1);
+
+                    // Add new nesting.
+                    output += &indentation_text.repeat(nesting_count);
+
+                    // Add removed chars.
+                    output += &last_3_chars.iter().collect::<String>();
+
+                    if _char == 'i' || _char == 's' {
+                        // #elif or #else
+                        preproc_add_nesting_on_next_line = true;
+                    }
+                }
+            }
+
+            // Determine if we are inside of a comment.
+            if last_3_chars[1] == '/' && last_3_chars[2] == '/' {
+                inside_comment = true;
+            }
+
+            // Update last input chars.
+            last_3_chars[0] = last_3_chars[1];
+            last_3_chars[1] = last_3_chars[2];
+            last_3_chars[2] = _char;
 
             if _char == '{' {
                 // Remove everything until text.

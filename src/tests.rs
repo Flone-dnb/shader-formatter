@@ -291,4 +291,20 @@ mod tests {
         // Test.
         compare_files_in_directory(config, "indent_preprocessor");
     }
+
+    #[test]
+    fn preprocessor_if_creates_nesting() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(!config.indent_preprocessor);
+        assert!(!config.preprocessor_if_creates_nesting);
+
+        // Change the setting.
+        config.indent_preprocessor = true;
+        config.preprocessor_if_creates_nesting = true;
+
+        // Test.
+        compare_files_in_directory(config, "preprocessor_if_creates_nesting");
+    }
 }

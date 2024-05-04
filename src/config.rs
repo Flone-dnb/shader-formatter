@@ -22,6 +22,7 @@ pub struct Config {
     pub require_docs_on_functions: bool,
     pub require_docs_on_structs: bool,
     pub indent_preprocessor: bool,
+    pub preprocessor_if_creates_nesting: bool,
 }
 
 impl Default for Config {
@@ -41,6 +42,7 @@ impl Default for Config {
             require_docs_on_functions: false,
             require_docs_on_structs: false,
             indent_preprocessor: false,
+            preprocessor_if_creates_nesting: false,
         }
     }
 }
@@ -160,6 +162,10 @@ impl Config {
                 }
                 "IndentPreprocessor" => {
                     config.indent_preprocessor = Self::toml_value_to_bool(&key, &value)?;
+                }
+                "PreprocessorIfCreatesNesting" => {
+                    config.preprocessor_if_creates_nesting =
+                        Self::toml_value_to_bool(&key, &value)?;
                 }
                 _ => return Err(format!("found unknown rule \"{}\"", key)),
             }
