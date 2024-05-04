@@ -11,20 +11,23 @@ mod rules;
 mod tests;
 
 const PRINT_TOKENS_ARG: &str = "--print-tokens";
+const ONLY_SCAN_ARG: &str = "--only-scan";
 
 fn main() -> ExitCode {
     // Make sure a path is specified.
     if std::env::args().len() == 1 {
-        println!("expected a path to be specified");
+        println!("expected a path to be specified\n");
         println!("usage:");
         println!(
-            "{} <path to file> <options>",
+            "{} <path to file> <option>",
             std::env::args().next().unwrap()
         );
-        println!("available options:");
+        println!("\nwhere <option> is one of the following:");
         println!(
-            "\"{}\" - prints parsed tokens (used for debugging)",
-            PRINT_TOKENS_ARG
+            "\"{}\" - prints parsed tokens (used for debugging)\n\
+             \"{}\" - only check if formatting is needed or not, don't change the actual file, \
+                returns 0 if no formatting is needed",
+            PRINT_TOKENS_ARG, ONLY_SCAN_ARG
         );
         return ExitCode::FAILURE;
     }
@@ -38,6 +41,13 @@ fn main() -> ExitCode {
     // See if we need to print tokens.
     let print_tokens = if let Some(additional_option) = std::env::args().nth(2) {
         additional_option == PRINT_TOKENS_ARG
+    } else {
+        false
+    };
+
+    // See if we only need to scan.
+    let only_scan = if let Some(additional_option) = std::env::args().nth(2) {
+        additional_option == ONLY_SCAN_ARG
     } else {
         false
     };
@@ -77,19 +87,46 @@ fn main() -> ExitCode {
         }
     };
 
-    // Write result to the file.
-    let mut file = match File::create(path) {
-        Ok(f) => f,
-        Err(error) => {
-            println!("failed to open the file for writing, error: {}", error);
+    if only_scan {
+        let diffs = diff::myers::lines(&file_content, &output);
+
+        let mut formatting_needed = false;
+        for diff in &diffs {
+            if let diff::Result::Left(_) = diff {
+                formatting_needed = true;
+                break;
+            } else if let diff::Result::Right(_) = diff {
+                formatting_needed = true;
+                break;
+            }
+        }
+
+        if formatting_needed {
+            println!("formatting is needed, see diff for before and after formatting:");
+            for diff in diffs {
+                match diff {
+                    diff::Result::Left(l) => println!("-{}", l),
+                    diff::Result::Both(l, _) => println!(" {}", l),
+                    diff::Result::Right(r) => println!("+{}", r),
+                }
+            }
             return ExitCode::FAILURE;
         }
-    };
-    match write!(file, "{}", output) {
-        Ok(_) => {}
-        Err(error) => {
-            println!("failed to write to the file, error: {}", error);
-            return ExitCode::FAILURE;
+    } else {
+        // Write result to the file.
+        let mut file = match File::create(path) {
+            Ok(f) => f,
+            Err(error) => {
+                println!("failed to open the file for writing, error: {}", error);
+                return ExitCode::FAILURE;
+            }
+        };
+        match write!(file, "{}", output) {
+            Ok(_) => {}
+            Err(error) => {
+                println!("failed to write to the file, error: {}", error);
+                return ExitCode::FAILURE;
+            }
         }
     }
 

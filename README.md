@@ -64,6 +64,10 @@ Below are the rules that are not checked unless they are specified in your confi
 - **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.
 - **GlobalVariablePrefix** (string) - defines required prefix for global variables, this rule is applied before other prefix and case rules so you can have a "mixed" global variables names like "g_iMyVariable" where global prefix is "g_", int prefix is "i" and case is "Camel".
 
+# Command line options
+
+There are some command line options that you might find useful such as running the formatter to only check if formatting is needed or not (without formatting the actual file). Run the tool without any arguments to see available command line options.
+
 # Build
 
 To build the tool you will need [Rust](https://www.rust-lang.org/tools/install).

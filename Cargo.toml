@@ -9,3 +9,4 @@ license = "MIT"
 chumsky = { git = "https://github.com/zesterer/chumsky.git", rev = "ef9f20f" }
 toml = "0.8.12"
 convert_case = "0.6.0"
+diff = { git = "https://github.com/utkarshkukreti/diff.rs", branch = "myers" }

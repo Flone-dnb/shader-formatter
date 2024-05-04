@@ -63,6 +63,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "diff"
+version = "0.1.13"
+source = "git+https://github.com/utkarshkukreti/diff.rs?branch=myers#9216dbfddf8a564f0227a32678522b306d60536a"
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -185,6 +190,7 @@ version = "0.1.0"
 dependencies = [
  "chumsky",
  "convert_case",
+ "diff",
  "toml",
 ]
 
