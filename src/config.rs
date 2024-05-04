@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use toml::Value;
 
 use crate::rules::*;
@@ -48,14 +50,10 @@ impl Default for Config {
 }
 
 impl Config {
-    /// Looks for a config file in the current directory or in parent directories.
+    /// Looks for a config file in the specified directory or in parent directories.
     /// If not found returns an empty config as `Ok`, otherwise an error message.
-    pub fn get() -> Result<Config, String> {
-        // Get current directory.
-        let mut current_dir = match std::env::current_dir() {
-            Ok(path) => path,
-            Err(error) => return Err(error.to_string()),
-        };
+    pub fn get(config_directory: &Path) -> Result<Config, String> {
+        let mut current_dir = config_directory.to_path_buf();
 
         loop {
             // Check if config exists in this directory.

@@ -59,8 +59,20 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
+    // Get directory of this shader file.
+    let shader_directory = match path.parent() {
+        Some(path) => path,
+        None => {
+            println!(
+                "failed to get parent directory for file \"{}\"",
+                path.to_string_lossy()
+            );
+            return ExitCode::FAILURE;
+        }
+    };
+
     // Load config.
-    let config = match Config::get() {
+    let config = match Config::get(shader_directory) {
         Ok(f) => f,
         Err(msg) => {
             println!("{}", msg);
