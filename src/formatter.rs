@@ -142,7 +142,7 @@ impl Formatter {
         let mut ignore_until_text = false;
         let mut stop_ignoring_if_end_of_line = false;
         let mut last_3_chars = [' '; 3];
-        let mut inside_c_comment: usize = 0;
+        let mut inside_c_comment_count: usize = 0;
         let mut inside_comment = false;
         let mut preproc_add_nesting_on_next_line = false;
 
@@ -199,7 +199,7 @@ impl Formatter {
                         }
                     }
 
-                    if inside_c_comment > 0 && _char == '*' {
+                    if inside_c_comment_count > 0 && _char == '*' {
                         // Add a single space for C-style comments to look good.
                         output.push(' ');
                     }
@@ -219,9 +219,9 @@ impl Formatter {
 
             // Detect a C-comment.
             if last_3_chars[1] == '/' && last_3_chars[2] == '*' && (_char == '*' || _char == '!') {
-                inside_c_comment += 1;
+                inside_c_comment_count += 1;
             } else if last_3_chars[1] == '*' && last_3_chars[2] == '/' {
-                inside_c_comment = inside_c_comment.saturating_sub(1);
+                inside_c_comment_count = inside_c_comment_count.saturating_sub(1);
             }
 
             if self.config.preprocessor_if_creates_nesting
@@ -272,6 +272,12 @@ impl Formatter {
             last_3_chars[0] = last_3_chars[1];
             last_3_chars[1] = last_3_chars[2];
             last_3_chars[2] = _char;
+
+            if inside_comment || inside_c_comment_count > 0 {
+                // Just copy the char, don't do anything else.
+                output.push(_char);
+                continue;
+            }
 
             if _char == '{' {
                 // Remove everything until text.
