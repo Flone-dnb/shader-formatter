@@ -133,7 +133,15 @@ mod tests {
 
     #[test]
     fn default_settings() {
-        compare_files_in_directory(Config::default(), "default_settings");
+        compare_files_in_directory(Config::default(), "default_settings/general");
+    }
+
+    #[test]
+    fn add_indentation_on_new_line_in_braces() {
+        compare_files_in_directory(
+            Config::default(),
+            "default_settings/add_indentation_on_new_line_in_braces",
+        );
     }
 
     #[test]

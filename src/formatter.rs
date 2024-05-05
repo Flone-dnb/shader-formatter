@@ -375,6 +375,9 @@ impl Formatter {
                 // Wait for text or an end of line.
                 ignore_until_text = true;
                 stop_ignoring_if_end_of_line = true;
+
+                // Increase nesting if will be on new line (while inside braces).
+                nesting_count += 1;
             } else if _char == ']' || _char == ')' {
                 // Remove everything until text.
                 let mut chars_to_remove = 0;
@@ -398,6 +401,9 @@ impl Formatter {
                 }
 
                 output.push(_char);
+
+                // Decrease nesting if will be on new line.
+                nesting_count = nesting_count.saturating_sub(1);
             } else {
                 if _char == ')' {
                     // Check if we have spaces like `(    )` to remove them.

@@ -27,8 +27,8 @@ float4 main(VertexOut pin) : SV_Target {
 
 void foo() {
     bar(
-    1,
-    2);
+        1,
+        2);
 }
 
 if (2 > 1) {
