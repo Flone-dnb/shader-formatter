@@ -2,6 +2,9 @@
 
 This is a standalone tool that accepts a path to a shader file to format. Returns `0` if formatted successfully, otherwise a non-zero value if an error occurred or something must be changed manually.
 
+Note
+> Only HLSL and GLSL are supported.
+
 # VSCode extension
 
 There is a VSCode extension for this tool, see: https://github.com/Flone-dnb/vscode-shader-formatter
