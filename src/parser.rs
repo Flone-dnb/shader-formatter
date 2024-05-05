@@ -25,6 +25,7 @@ pub enum Token<'src> {
     TypeName(Type),
     Ident(&'src str),
     Comment(&'src str),
+    Keyword(&'src str),
     Other(char),
 }
 
@@ -121,6 +122,7 @@ pub fn token_parser<'src>(
         }
         "Texture2D" | "sampler2D" => Token::TypeName(Type::Texture),
         "SamplerState" | "SamplerComparisonState" => Token::TypeName(Type::Sampler),
+        "return" => Token::Keyword("return"),
         _ => Token::Ident(ident),
     });
 
@@ -257,7 +259,7 @@ where
     let func_custom_return = comment
         .repeated()
         .collect::<Vec<&str>>()
-        .then_ignore(ident) // type
+        .then_ignore(ident.and_is(just(Token::Keyword("return")).not()))
         .then(ident)
         .then_ignore(just(Token::Ctrl('(')))
         .then(argument.repeated().collect())
