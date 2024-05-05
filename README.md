@@ -29,7 +29,7 @@ Below is the list of all possible formatting rules that you can describe in your
     - After
     - Before
 - **MaxEmptyLines** (unsigned integer) - defines how much consecutive empty lines to keep.
-- **SpacesInBrackets** (boolean) - defines whether or not to add spaces between `(` and `)`, `[` and `]`, `<` and `>`, for example: if enabled converts `foo(param1, param2)` to `foo( param1, param2 )`.
+- **SpacesInBrackets** (boolean) - defines whether or not to add spaces between `(` and `)`, `[` and `]` for example: if enabled converts `foo(param1, param2)` to `foo( param1, param2 )`.
 - **IndentPreprocessor** (bool) - defines whether preprocessor directives will be indented or not.
 - **PreprocessorIfCreatesNesting** (bool) - defines whether or not preprocessor directives such as `#if`, `#ifdef`, `#elif` and `#else` create nesting just like regular `if`/`else` keywords. Only works when `IndentPreprocessor` is enabled.
 - **RequireDocsOnFunctions** (bool) - defines whether documentation comments on functions are required or not. Here are a few examples of documentation comments:

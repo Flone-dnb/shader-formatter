@@ -28,3 +28,11 @@ float sum = foo(0.5F, 0.5f, 0.5, 0.);
 
 template<Foo>
 void test(){}
+
+if (2 > 1) {
+	return;
+}
+
+if (1 < 2) {
+	return;
+}

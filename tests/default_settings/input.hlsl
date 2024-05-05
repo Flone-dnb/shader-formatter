@@ -35,6 +35,14 @@ bar(
     2);
 }
 
+if ( 2 > 1 ) {
+    return;
+}
+
+if ( 1 < 2 ) {
+    return;
+}
+
 template<Foo>
 void test(){}
 

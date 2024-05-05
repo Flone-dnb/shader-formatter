@@ -135,16 +135,26 @@ impl Formatter {
 
         let mut output = String::with_capacity(content.len());
 
-        // Prepare some handy variables.
+        // Prepare some handy variables...
+
+        // For nesting.
         let mut nesting_count: usize = 0;
+
+        // For new lines.
         let mut consecutive_empty_new_line_count: usize = 0;
         let mut is_on_new_line = true;
         let mut ignore_until_text = false;
         let mut stop_ignoring_if_end_of_line = false;
-        let mut last_3_chars = [' '; 3];
+
+        // For comments.
         let mut inside_c_comment_count: usize = 0;
         let mut inside_comment = false;
+
+        // For preprocessor directives.
         let mut preproc_add_nesting_on_next_line = false;
+
+        // Other.
+        let mut last_3_chars = [' '; 3];
 
         for _char in content.chars() {
             // Just ignore '\r's.
@@ -354,7 +364,7 @@ impl Formatter {
                 // struct Foo{
                 // };
                 // The `;` will be on the new line if we insert one.
-            } else if _char == '<' || _char == '[' || _char == '(' {
+            } else if _char == '[' || _char == '(' {
                 output.push(_char);
 
                 // Add space if needed.
@@ -365,7 +375,7 @@ impl Formatter {
                 // Wait for text or an end of line.
                 ignore_until_text = true;
                 stop_ignoring_if_end_of_line = true;
-            } else if _char == '>' || _char == ']' || _char == ')' {
+            } else if _char == ']' || _char == ')' {
                 // Remove everything until text.
                 let mut chars_to_remove = 0;
                 for check in output.chars().rev() {

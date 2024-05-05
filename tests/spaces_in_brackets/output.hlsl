@@ -16,7 +16,7 @@ float4 main( VertexOut pin ) : SV_Target {
             // TODO
         }
     }
-    test = static_cast< float >( sum );
+    test = static_cast<float>( sum );
     
     float array[ 2 ];
     array[ 0 ] = 0.0f;
@@ -24,6 +24,14 @@ float4 main( VertexOut pin ) : SV_Target {
     return float4( sum, sum, sum, sum );
 }
 
-template< Foo >
+template<Foo>
 void test() {
+}
+
+if ( 2 > 1 ) {
+    return;
+}
+
+if ( 1 < 2 ) {
+    return;
 }
