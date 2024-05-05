@@ -29,20 +29,6 @@ float sum = foo(0.5F, 0.5f, 0.5, 0.);
 	return float4(sum, sum, sum, sum);
 }
 
-void foo() {
-bar(
-    1,
-    2);
-}
-
-if ( 2 > 1 ) {
-    return;
-}
-
-if ( 1 < 2 ) {
-    return;
-}
-
 template<Foo>
 void test(){}
 

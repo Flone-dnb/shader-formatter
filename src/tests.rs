@@ -138,9 +138,25 @@ mod tests {
 
     #[test]
     fn add_indentation_on_new_line_in_braces() {
+        let config = Config::default();
+
+        assert!(config.spaces_in_brackets == false);
+
         compare_files_in_directory(
             Config::default(),
             "default_settings/add_indentation_on_new_line_in_braces",
+        );
+    }
+
+    #[test]
+    fn dont_remove_spaces_in_comparison() {
+        let config = Config::default();
+
+        assert!(config.spaces_in_brackets == false);
+
+        compare_files_in_directory(
+            Config::default(),
+            "default_settings/dont_remove_spaces_in_comparison",
         );
     }
 

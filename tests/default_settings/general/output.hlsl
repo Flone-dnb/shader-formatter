@@ -25,20 +25,6 @@ float4 main(VertexOut pin) : SV_Target {
     return float4(sum, sum, sum, sum);
 }
 
-void foo() {
-    bar(
-        1,
-        2);
-}
-
-if (2 > 1) {
-    return;
-}
-
-if (1 < 2) {
-    return;
-}
-
 template<Foo>
 void test() {
 }
