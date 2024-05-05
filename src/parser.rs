@@ -12,6 +12,7 @@ pub enum Type {
     Matrix,
     Texture,
     Sampler,
+    Custom,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -157,13 +158,13 @@ pub fn complex_token_parser<'src, I>(
 where
     I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>,
 {
-    let var_type = select! { Token::TypeName(t) => t };
+    let std_var_type = select! { Token::TypeName(t) => t };
     let ident = select! { Token::Ident(ident) => ident };
     let comment = select! { Token::Comment(c) => c};
     let token = select! { token => token };
 
     // A parser for struct fields.
-    let field = var_type
+    let field = std_var_type
         .then(ident)
         .then_ignore(none_of(Token::Ctrl(';')).repeated())
         .then_ignore(just(Token::Ctrl(';')));
@@ -190,14 +191,14 @@ where
         });
 
     // A parser for variable declaration.
-    let variable_declaration = var_type
+    let variable_declaration = std_var_type
         .then(ident)
         .then_ignore(just(Token::Op("=")).or_not())
         .then_ignore(none_of(Token::Ctrl(';')).repeated())
         .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
 
     // A parser for function arguments that use HLSL semantics.
-    let argument_semantic = var_type
+    let argument_semantic = std_var_type
         .then(ident)
         .then_ignore(
             just(Token::Ctrl(':'))
@@ -215,13 +216,13 @@ where
         .then(ident)
         .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))
         .map(|(_type, name)| FuncArgument {
-            _type: Type::Void, // use void for now
+            _type: Type::Custom,
             name,
             is_using_semantic: false,
         });
 
     // A parser for function arguments with standard types.
-    let standard_argument = var_type
+    let std_argument = std_var_type
         .then(ident)
         .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))
         .map(|(_type, name)| FuncArgument {
@@ -231,16 +232,16 @@ where
         });
 
     // A parser for function arguments.
-    let argument = standard_argument.or(argument_semantic).or(custom_argument);
+    let argument = std_argument.or(argument_semantic).or(custom_argument);
 
-    // A parser for functions.
-    let function = comment
+    // A parser for functions with standard return type.
+    let func_std_return = comment
         .repeated()
         .collect::<Vec<&str>>()
-        .then(var_type)
+        .then(std_var_type)
         .then(ident)
         .then_ignore(just(Token::Ctrl('(')))
-        .then(argument.repeated().collect())
+        .then(argument.clone().repeated().collect())
         .then_ignore(just(Token::Ctrl(')')).or_not())
         .map(|(((opt_comments, return_type), name), args)| {
             ComplexToken::Function(FunctionInfo {
@@ -250,6 +251,28 @@ where
                 docs: opt_comments.concat(),
             })
         });
+
+    // A parser for functions with custom return type
+    // TODO: remove code duplication
+    let func_custom_return = comment
+        .repeated()
+        .collect::<Vec<&str>>()
+        .then_ignore(ident) // type
+        .then(ident)
+        .then_ignore(just(Token::Ctrl('(')))
+        .then(argument.repeated().collect())
+        .then_ignore(just(Token::Ctrl(')')).or_not())
+        .map(|((opt_comments, name), args)| {
+            ComplexToken::Function(FunctionInfo {
+                name,
+                args,
+                return_type: Type::Custom,
+                docs: opt_comments.concat(),
+            })
+        });
+
+    // A parser for functions.
+    let function = func_std_return.or(func_custom_return);
 
     // If non of our parsers from above worked then just pass the token.
     let output = _struct
