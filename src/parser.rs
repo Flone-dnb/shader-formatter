@@ -188,9 +188,11 @@ where
         .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
 
     // A parser for function arguments.
-    let argument = var_type
-        .then(ident)
-        .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))));
+    let argument = var_type.then(ident).then_ignore(
+        just(Token::Ctrl(','))
+            .or(just(Token::Ctrl(')')))
+            .or(just(Token::Ctrl(':'))), // HLSL semantic
+    );
 
     // A parser for functions.
     let function = comment
