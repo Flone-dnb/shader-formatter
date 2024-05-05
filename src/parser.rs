@@ -41,11 +41,19 @@ pub struct StructInfo<'src> {
     pub docs: String,
 }
 
+/// Groups parsed information about a function argument.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FuncArgument<'src> {
+    pub _type: Type,
+    pub name: &'src str,
+    pub is_using_semantic: bool,
+}
+
 /// Groups parsed information about a function.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FunctionInfo<'src> {
     pub name: &'src str,
-    pub args: Vec<(Type, &'src str)>,
+    pub args: Vec<FuncArgument<'src>>,
     pub return_type: Type,
     pub docs: String,
 }
@@ -188,15 +196,30 @@ where
         .then_ignore(none_of(Token::Ctrl(';')).repeated())
         .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
 
-    // A parser for function arguments.
-    let argument = var_type.then(ident).then_ignore(
-        just(Token::Ctrl(','))
-            .or(just(Token::Ctrl(')')))
-            // or HLSL semantic:
-            .or(just(Token::Ctrl(':'))
+    // A parser for function arguments that use HLSL semantics.
+    let argument_semantic = var_type
+        .then(ident)
+        .then_ignore(
+            just(Token::Ctrl(':'))
                 .then_ignore(ident)
-                .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))),
-    );
+                .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')')))),
+        )
+        .map(|(_type, name)| FuncArgument {
+            _type,
+            name,
+            is_using_semantic: true,
+        });
+
+    // A parser for function arguments.
+    let argument = var_type
+        .then(ident)
+        .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))
+        .map(|(_type, name)| FuncArgument {
+            _type,
+            name,
+            is_using_semantic: false,
+        })
+        .or(argument_semantic);
 
     // A parser for functions.
     let function = comment

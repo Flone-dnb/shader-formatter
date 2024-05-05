@@ -476,8 +476,8 @@ impl Formatter {
                     }
 
                     // Check args.
-                    for (arg_type, arg_name) in info.args {
-                        self.check_variable_name(arg_name, arg_type, is_global_scope)?;
+                    for info in info.args {
+                        self.check_variable_name(info.name, info._type, is_global_scope)?;
                     }
                 }
                 Other(token) => {
@@ -670,18 +670,22 @@ impl Formatter {
         }
 
         // Check argument docs.
-        for (_, arg_name) in &func_info.args {
-            if !documented_args.iter().any(|name| name == arg_name) {
+        for info in &func_info.args {
+            if info.is_using_semantic {
+                // Don't require docs for arguments with semantics.
+                continue;
+            }
+            if !documented_args.iter().any(|name| name == info.name) {
                 return Err(format!(
                     "expected to find documentation for the argument \"{}\" of the function \"{}\"",
-                    arg_name, func_info.name
+                    info.name, func_info.name
                 ));
             }
         }
 
         // Check if there are argument comments that don't reference an actual argument.
         for doc_arg_name in documented_args {
-            if !func_info.args.iter().any(|(_, name)| name == &doc_arg_name) {
+            if !func_info.args.iter().any(|info| info.name == doc_arg_name) {
                 return Err(format!(
                     "found documentation for a non-existing argument \"{}\" of the function \"{}\"",
                     doc_arg_name, func_info.name
