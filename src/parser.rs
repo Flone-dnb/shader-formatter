@@ -105,7 +105,8 @@ pub fn token_parser<'src>(
         "float" | "half" | "double" => Token::TypeName(Type::Float),
         "int" | "uint" | "dword" => Token::TypeName(Type::Integer),
         "bool" => Token::TypeName(Type::Bool),
-        "float4" | "vec4" | "float2" | "vec2" | "float3" | "vec3" => Token::TypeName(Type::Vector),
+        "float4" | "vec4" | "float2" | "vec2" | "float3" | "vec3" | "uint4" | "uvec4" | "uint3"
+        | "uvec3" | "uint2" | "uvec2" => Token::TypeName(Type::Vector),
         "float4x4" | "mat4x4" | "float3x3" | "mat3x3" | "float2x2" | "mat2x2" => {
             Token::TypeName(Type::Matrix)
         }
@@ -191,7 +192,10 @@ where
     let argument = var_type.then(ident).then_ignore(
         just(Token::Ctrl(','))
             .or(just(Token::Ctrl(')')))
-            .or(just(Token::Ctrl(':'))), // HLSL semantic
+            // or HLSL semantic:
+            .or(just(Token::Ctrl(':'))
+                .then_ignore(ident)
+                .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))),
     );
 
     // A parser for functions.
