@@ -210,16 +210,28 @@ where
             is_using_semantic: true,
         });
 
-    // A parser for function arguments.
-    let argument = var_type
+    // A parser for function arguments with custom (user) type.
+    let custom_argument = ident
+        .then(ident)
+        .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))
+        .map(|(_type, name)| FuncArgument {
+            _type: Type::Void, // use void for now
+            name,
+            is_using_semantic: false,
+        });
+
+    // A parser for function arguments with standard types.
+    let standard_argument = var_type
         .then(ident)
         .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))
         .map(|(_type, name)| FuncArgument {
             _type,
             name,
             is_using_semantic: false,
-        })
-        .or(argument_semantic);
+        });
+
+    // A parser for function arguments.
+    let argument = standard_argument.or(argument_semantic).or(custom_argument);
 
     // A parser for functions.
     let function = comment
