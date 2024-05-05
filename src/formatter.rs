@@ -140,6 +140,7 @@ impl Formatter {
         let mut consecutive_empty_new_line_count: usize = 0;
         let mut is_on_new_line = true;
         let mut ignore_until_text = false;
+        let mut stop_ignoring_if_end_of_line = false;
         let mut last_3_chars = [' '; 3];
         let mut inside_c_comment: usize = 0;
         let mut inside_comment = false;
@@ -160,9 +161,12 @@ impl Formatter {
                     preproc_add_nesting_on_next_line = false;
                 }
 
-                if !ignore_until_text
+                if (!ignore_until_text || stop_ignoring_if_end_of_line)
                     && consecutive_empty_new_line_count <= self.config.max_empty_lines
                 {
+                    ignore_until_text = false;
+                    stop_ignoring_if_end_of_line = false;
+
                     output += LINE_ENDING;
                     output += &indentation_text.repeat(nesting_count);
                     consecutive_empty_new_line_count += 1;
@@ -178,6 +182,7 @@ impl Formatter {
                 if _char != ' ' && _char != '\t' {
                     is_on_new_line = false;
                     ignore_until_text = false;
+                    stop_ignoring_if_end_of_line = false;
                     consecutive_empty_new_line_count = 0;
 
                     if _char == '#' && !self.config.indent_preprocessor {
@@ -206,6 +211,7 @@ impl Formatter {
             if ignore_until_text {
                 if _char != ' ' && _char != '\t' {
                     ignore_until_text = false;
+                    stop_ignoring_if_end_of_line = false;
                 } else {
                     continue;
                 }
@@ -350,8 +356,9 @@ impl Formatter {
                     output.push(' ');
                 }
 
-                // Wait for text.
+                // Wait for text or an end of line.
                 ignore_until_text = true;
+                stop_ignoring_if_end_of_line = true;
             } else if _char == '>' || _char == ']' || _char == ')' {
                 // Remove everything until text.
                 let mut chars_to_remove = 0;

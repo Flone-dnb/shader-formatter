@@ -29,6 +29,12 @@ float sum = foo(0.5F, 0.5f, 0.5, 0.);
 	return float4(sum, sum, sum, sum);
 }
 
+void foo() {
+bar(
+    1,
+    2);
+}
+
 template<Foo>
 void test(){}
 
