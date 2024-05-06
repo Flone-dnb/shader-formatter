@@ -523,6 +523,10 @@ impl Formatter {
             }
         }
 
+        if is_inside_nolint {
+            return Err("`NOLINTBEGIN` was found but no matching `NOLINTEND` detected".to_owned());
+        }
+
         Ok(())
     }
 
