@@ -2,7 +2,7 @@ use chumsky::{input::ValueInput, prelude::*};
 
 pub type Span = SimpleSpan<usize>;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Type {
     Void,
     Bool,
@@ -129,7 +129,13 @@ pub fn token_parser<'src>(
     // Parsers for comments.
     let simple_comment = just("//")
         .or(just("///"))
-        .ignore_then(any().and_is(just("\n").not()).repeated().to_slice())
+        .ignore_then(
+            any()
+                .and_is(just("\n").not())
+                .repeated()
+                .to_slice()
+                .padded(),
+        )
         .map(Token::Comment);
     let c_comment = just("/**")
         .or(just("/*!"))
@@ -197,6 +203,7 @@ where
         .then(ident)
         .then_ignore(just(Token::Op("=")).or_not())
         .then_ignore(none_of(Token::Ctrl(';')).repeated())
+        .then_ignore(just(Token::Ctrl(';')).or_not())
         .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
 
     // A parser for function arguments that use HLSL semantics.

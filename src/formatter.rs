@@ -434,19 +434,41 @@ impl Formatter {
     ) -> Result<(), String> {
         // Prepare some variables to determine if we are inside of a global scope or inside of some function.
         let mut is_global_scope = true;
+        let mut is_inside_nolint = false;
         let mut scope_nesting_count = 0;
 
-        for (complex_token, _) in complex_tokens {
+        let mut token_iter = complex_tokens.iter().peekable();
+        while let Some((complex_token, _)) = token_iter.next() {
+            // Check for nolint section.
+            if let Other(Token::Comment(text)) = *complex_token {
+                if text.starts_with("NOLINTBEGIN") {
+                    is_inside_nolint = true;
+                } else if text.starts_with("NOLINTEND") {
+                    is_inside_nolint = false;
+                }
+            }
+
+            // Skip this token if nolint.
+            if is_inside_nolint {
+                continue;
+            }
+            // Check if next token is a nolint.
+            else if let Some((Other(Token::Comment(text)), _)) = token_iter.peek() {
+                if text.starts_with("NOLINT") {
+                    continue;
+                }
+            }
+
             match complex_token {
                 VariableDeclaration(_type, name) => {
-                    self.check_variable_name(name, _type, is_global_scope)?;
+                    self.check_variable_name(name, *_type, is_global_scope)?;
                 }
                 Struct(info) => {
                     is_global_scope = false;
 
                     // Check docs.
                     if self.config.require_docs_on_structs {
-                        Self::check_struct_docs(&info)?;
+                        Self::check_struct_docs(info)?;
                     }
 
                     // Check name case.
@@ -455,8 +477,8 @@ impl Formatter {
                     }
 
                     // Check fields.
-                    for (field_type, field_name) in info.fields {
-                        self.check_variable_name(field_name, field_type, is_global_scope)?;
+                    for (field_type, field_name) in &info.fields {
+                        self.check_variable_name(field_name, *field_type, is_global_scope)?;
                     }
 
                     is_global_scope = true;
@@ -467,7 +489,7 @@ impl Formatter {
 
                     // Check docs.
                     if self.config.require_docs_on_functions {
-                        Self::check_function_docs(&info)?;
+                        Self::check_function_docs(info)?;
                     }
 
                     // Check name case.
@@ -476,15 +498,15 @@ impl Formatter {
                     }
 
                     // Check args.
-                    for info in info.args {
+                    for info in &info.args {
                         self.check_variable_name(info.name, info._type, is_global_scope)?;
                     }
                 }
                 Other(token) => {
                     if !is_global_scope {
-                        if token == Token::Ctrl('{') {
+                        if *token == Token::Ctrl('{') {
                             scope_nesting_count += 1;
-                        } else if token == Token::Ctrl('}') {
+                        } else if *token == Token::Ctrl('}') {
                             if scope_nesting_count == 0 {
                                 // Unexpected, we probably have something wrong in other place.
                                 return Err("found '}' but scope nesting counter is already zero"

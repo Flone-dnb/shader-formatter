@@ -331,4 +331,18 @@ mod tests {
         // Test.
         compare_files_in_directory(config, "preprocessor_if_creates_nesting");
     }
+
+    #[test]
+    fn nolint() {
+        let mut config = Config::default();
+
+        // Make sure default config uses other setting.
+        assert!(config.variable_case.is_none());
+
+        // Change the setting.
+        config.variable_case = Some(Case::Camel);
+
+        // Test.
+        test_formatting_fail_success(config, "nolint");
+    }
 }

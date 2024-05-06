@@ -5,6 +5,8 @@ This is a standalone tool that accepts a path to a shader file to format. Return
 Note
 > Only HLSL and GLSL are supported.
 
+This tool combines features from such tools as `clang-format`, `clang-tidy` and `doxygen`.
+
 # VSCode extension
 
 There is a VSCode extension for this tool, see: https://github.com/Flone-dnb/vscode-shader-formatter
@@ -70,6 +72,18 @@ Below are the rules that are not checked unless they are specified in your confi
 - **IntPrefix** (string) - defines required prefix for integer variables, for example if this rule is set to `i` then a correct variable may look like this: `iValue`.
 - **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.
 - **GlobalVariablePrefix** (string) - defines required prefix for global variables, this rule is applied before other prefix and case rules so you can have a "mixed" global variables names like "g_iMyVariable" where global prefix is "g_", int prefix is "i" and case is "Camel".
+
+# Temporary disabling checks
+
+Similar to `clang-tidy` you can use `NOLINT` comments to disable checks for certain parts of your code:
+
+```
+int WrOnG_cAsE = 1; // NOLINT
+
+// NOLINTBEGIN
+int WrOnG_cAsE = 1;
+// NOLINTEND
+```
 
 # Command line options
 
