@@ -13,6 +13,10 @@ use crate::{
 /// (like changing a variable's case).
 pub const CHANGES_REQUIRED_ERR_MSG: &str = "changes required";
 
+/// Comments used to tell the formatter to don't format (ignore) some lines of code.
+const NOFORMAT_BEGIN_COMMENT: &str = " NOFORMATBEGIN";
+const NOFORMAT_END_COMMENT: &str = " NOFORMATEND";
+
 #[cfg(windows)]
 const LINE_ENDING: &str = "\r\n";
 #[cfg(not(windows))]
@@ -45,6 +49,10 @@ impl Formatter {
 
         // Apply rules that don't need tokens.
         let output = self.apply_simple_rules(content);
+        if let Err(msg) = output {
+            return Err(format!("{}: {}", CHANGES_REQUIRED_ERR_MSG, msg));
+        }
+        let output = output.unwrap();
 
         // Parse tokens.
         let (tokens, errors) = parser::token_parser()
@@ -125,7 +133,10 @@ impl Formatter {
 
     /// Applies the most simplest formatting rules that do not require
     /// any prior parsing (no tokens required).
-    fn apply_simple_rules(&self, content: &str) -> String {
+    ///
+    /// # Return
+    /// `Ok` with formatted code or `Err` with an error message.
+    fn apply_simple_rules(&self, content: &str) -> Result<String, String> {
         // Prepare indentation text.
         let indentation_text = match self.config.indentation {
             IndentationRule::Tab => "\t",
@@ -149,12 +160,14 @@ impl Formatter {
         // For comments.
         let mut inside_c_comment_count: usize = 0;
         let mut inside_comment = false;
+        let mut last_comment_line = String::new(); // contains last found line of comment
 
         // For preprocessor directives.
         let mut preproc_add_nesting_on_next_line = false;
 
         // Other.
         let mut last_3_chars = [' '; 3];
+        let mut inside_no_format = false;
 
         for _char in content.chars() {
             // Just ignore '\r's.
@@ -276,6 +289,7 @@ impl Formatter {
             // Determine if we are inside of a comment.
             if last_3_chars[1] == '/' && last_3_chars[2] == '/' {
                 inside_comment = true;
+                last_comment_line = String::new();
             }
 
             // Update last input chars.
@@ -285,6 +299,19 @@ impl Formatter {
 
             if inside_comment || inside_c_comment_count > 0 {
                 // Just copy the char, don't do anything else.
+                output.push(_char);
+                last_comment_line.push(_char);
+
+                // Check if we don't need to format code.
+                if last_comment_line == NOFORMAT_BEGIN_COMMENT {
+                    inside_no_format = true;
+                } else if last_comment_line == NOFORMAT_END_COMMENT {
+                    inside_no_format = false;
+                }
+
+                continue;
+            } else if inside_no_format {
+                // Just copy the char, don't run any additional logic.
                 output.push(_char);
                 continue;
             }
@@ -424,7 +451,14 @@ impl Formatter {
             }
         }
 
-        output
+        if inside_no_format {
+            return Err(format!(
+                "{} was found but no matching{} detected",
+                NOFORMAT_BEGIN_COMMENT, NOFORMAT_END_COMMENT
+            ));
+        }
+
+        Ok(output)
     }
 
     /// Checks complex formatting rules that require prior parsing (tokens required).

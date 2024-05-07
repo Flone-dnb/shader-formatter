@@ -347,6 +347,14 @@ mod tests {
     }
 
     #[test]
+    fn noformat() {
+        // Test.
+        compare_files_in_directory(Config::default(), "noformat/1");
+        compare_files_in_directory(Config::default(), "noformat/2");
+        test_formatting_fail_success(Config::default(), "noformat/no_matching_end")
+    }
+
+    #[test]
     fn require_docs_on_fields() {
         let mut config = Config::default();
 

@@ -74,7 +74,7 @@ Below are the rules that are not checked unless they are specified in your confi
 - **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.
 - **GlobalVariablePrefix** (string) - defines required prefix for global variables, this rule is applied before other prefix and case rules so you can have a "mixed" global variables names like "g_iMyVariable" where global prefix is "g_", int prefix is "i" and case is "Camel".
 
-# Temporary disabling checks
+# Temporary disabling formatting or checks
 
 Similar to `clang-tidy` you can use `NOLINT` comments to disable checks for certain parts of your code:
 
@@ -84,6 +84,15 @@ int WrOnG_cAsE = 1; // NOLINT
 // NOLINTBEGIN
 int WrOnG_cAsE = 1;
 // NOLINTEND
+```
+
+In addition, similar to `clang-format`s `clang-format off` comments you can mark some parts of your code to be skipped by the formatted:
+
+``
+// NOFORMATBEGIN
+void foo(            int a);
+void bar( SomeCustomType b);
+// NOFORMATEND
 ```
 
 # Command line options
