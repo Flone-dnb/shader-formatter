@@ -215,10 +215,19 @@ where
         .then_ignore(none_of(Token::Ctrl(';')).repeated())
         .then_ignore(just(Token::Ctrl(';')));
 
+    // A parser for GLSL `layout` keyword.
+    let layout = just(Token::Ident("layout"))
+        .ignore_then(just(Token::Ctrl('(')))
+        .ignore_then(just(Token::Ident("binding")))
+        .ignore_then(just(Token::Op("=")))
+        .ignore_then(select! { Token::Integer(ident) => ident })
+        .ignore_then(just(Token::Ctrl(')')));
+
     // A parser for structs.
     let _struct = comment
         .repeated()
         .collect::<Vec<&str>>()
+        .then_ignore(layout.or_not())
         .then_ignore(
             just(Token::Ident("struct"))
                 .or(just(Token::Ident("uniform")))
