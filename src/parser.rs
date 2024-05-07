@@ -26,6 +26,7 @@ pub enum Token<'src> {
     Ident(&'src str),
     Comment(&'src str),
     Keyword(&'src str),
+    Preprocessor(&'src str),
     Other(char),
 }
 
@@ -126,6 +127,42 @@ pub fn token_parser<'src>(
         _ => Token::Ident(ident),
     });
 
+    // Parsers for preprocessor directives.
+    let preprocessor_if = just("#if")
+        .padded()
+        .then(just("defined").or_not())
+        .then(
+            any()
+                .and_is(just("\n").not())
+                .repeated()
+                .to_slice()
+                .padded(),
+        )
+        .to_slice()
+        .map(Token::Preprocessor);
+    let preprocessor_else = just("#else")
+        .or(just("#elif"))
+        .padded()
+        .then(
+            any()
+                .and_is(just("\n").not())
+                .repeated()
+                .to_slice()
+                .padded(),
+        )
+        .to_slice()
+        .map(Token::Preprocessor);
+    let preprocessor_end = just("#endif").map(Token::Preprocessor);
+    let preprocessor_other = just("#")
+        .then(text::ascii::ident())
+        .padded()
+        .to_slice()
+        .map(Token::Preprocessor);
+    let preprocessor = preprocessor_if
+        .or(preprocessor_else)
+        .or(preprocessor_end)
+        .or(preprocessor_other);
+
     // Parsers for comments.
     let simple_comment = just("//")
         .or(just("///"))
@@ -148,6 +185,7 @@ pub fn token_parser<'src>(
     let token = float
         .or(integer)
         .or(comment)
+        .or(preprocessor)
         .or(single_char_operator)
         .or(multi_char_operator)
         .or(ctrl)
