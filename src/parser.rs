@@ -36,11 +36,19 @@ impl std::fmt::Display for Token<'_> {
     }
 }
 
+/// Groups parsed information about a field of a struct.
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructField<'src> {
+    pub _type: Type,
+    pub name: &'src str,
+    pub docs: String,
+}
+
 /// Groups parsed information about a struct.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StructInfo<'src> {
     pub name: &'src str,
-    pub fields: Vec<(Type, &'src str)>,
+    pub fields: Vec<StructField<'src>>,
     pub docs: String,
 }
 
@@ -210,10 +218,19 @@ where
     let token = select! { token => token };
 
     // A parser for struct fields.
-    let field = std_var_type
+    let field = comment
+        .repeated()
+        .collect::<Vec<&str>>()
+        .then(std_var_type.or(ident.map(|_| Type::Custom)))
         .then(ident)
+        .then_ignore(just(Token::Ctrl('[')).then(just(Token::Ctrl(']'))).or_not()) // for arrays
         .then_ignore(none_of(Token::Ctrl(';')).repeated())
-        .then_ignore(just(Token::Ctrl(';')));
+        .then_ignore(just(Token::Ctrl(';')))
+        .map(|((opt_comments, _type), name)| StructField {
+            _type,
+            name,
+            docs: opt_comments.concat(),
+        });
 
     // A parser for GLSL `layout` keyword.
     let layout = just(Token::Ident("layout"))

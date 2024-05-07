@@ -23,6 +23,7 @@ pub struct Config {
     pub global_variable_prefix: Option<String>,
     pub require_docs_on_functions: bool,
     pub require_docs_on_structs: bool,
+    pub require_docs_on_fields: bool,
     pub indent_preprocessor: bool,
     pub preprocessor_if_creates_nesting: bool,
 }
@@ -43,6 +44,7 @@ impl Default for Config {
             global_variable_prefix: None,
             require_docs_on_functions: false,
             require_docs_on_structs: false,
+            require_docs_on_fields: false,
             indent_preprocessor: false,
             preprocessor_if_creates_nesting: false,
         }
@@ -157,6 +159,9 @@ impl Config {
                 }
                 "RequireDocsOnStructs" => {
                     config.require_docs_on_structs = Self::toml_value_to_bool(&key, &value)?;
+                }
+                "RequireDocsOnFields" => {
+                    config.require_docs_on_fields = Self::toml_value_to_bool(&key, &value)?;
                 }
                 "IndentPreprocessor" => {
                     config.indent_preprocessor = Self::toml_value_to_bool(&key, &value)?;

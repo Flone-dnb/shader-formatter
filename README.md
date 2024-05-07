@@ -58,6 +58,7 @@ int foo(int value) {}
 ```
 
 - **RequireDocsOnStructs** (bool) - defines whether documentation comments on structs are required or not.
+- **RequireDocsOnFields** (bool) - defines whether documentation comments on struct fields are required or not.
 
 Below are the rules that are not checked unless they are specified in your configuration file:
 

@@ -477,8 +477,17 @@ impl Formatter {
                     }
 
                     // Check fields.
-                    for (field_type, field_name) in &info.fields {
-                        self.check_variable_name(field_name, *field_type, is_global_scope)?;
+                    for field_info in &info.fields {
+                        self.check_variable_name(
+                            field_info.name,
+                            field_info._type,
+                            is_global_scope,
+                        )?;
+                    }
+
+                    // Check field docs.
+                    if self.config.require_docs_on_fields {
+                        Self::check_struct_field_docs(info)?;
                     }
 
                     is_global_scope = true;
@@ -722,7 +731,7 @@ impl Formatter {
         Ok(())
     }
 
-    /// Checks that the documentation for the specified struct is written correctly or not.
+    /// Checks that the documentation for the specified struct is written correctly.
     ///
     /// # Return
     /// `Ok` if docs are correct, otherwise `Err` with a meaningful message about incorrect docs.
@@ -733,6 +742,24 @@ impl Formatter {
                 "expected to find documentation for the struct \"{}\"",
                 struct_info.name
             ));
+        }
+
+        Ok(())
+    }
+
+    /// Checks that the documentation for fields of the specified struct are written correctly.
+    ///
+    /// # Return
+    /// `Ok` if docs are correct, otherwise `Err` with a meaningful message about incorrect docs.
+    fn check_struct_field_docs(struct_info: &StructInfo) -> Result<(), String> {
+        for info in &struct_info.fields {
+            // Make sure docs are not empty.
+            if info.docs.is_empty() {
+                return Err(format!(
+                    "expected to find documentation for the struct field \"{}\"",
+                    info.name
+                ));
+            }
         }
 
         Ok(())
