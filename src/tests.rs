@@ -143,7 +143,7 @@ mod tests {
         assert!(config.spaces_in_brackets == false);
 
         compare_files_in_directory(
-            Config::default(),
+            config,
             "default_settings/add_indentation_on_new_line_in_braces",
         );
     }
@@ -154,9 +154,26 @@ mod tests {
 
         assert!(config.spaces_in_brackets == false);
 
+        compare_files_in_directory(config, "default_settings/dont_remove_spaces_in_comparison");
+    }
+
+    #[test]
+    fn bracket_avoids_comments() {
+        let config = Config::default();
+
+        assert!(config.spaces_in_brackets == false);
+
         compare_files_in_directory(
             Config::default(),
-            "default_settings/dont_remove_spaces_in_comparison",
+            "default_settings/bracket_avoids_comments/1",
+        );
+        compare_files_in_directory(
+            Config::default(),
+            "default_settings/bracket_avoids_comments/2",
+        );
+        compare_files_in_directory(
+            Config::default(),
+            "default_settings/bracket_avoids_comments/3",
         );
     }
 

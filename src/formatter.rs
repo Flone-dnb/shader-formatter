@@ -323,6 +323,7 @@ impl Formatter {
                     if check != ' ' && check != '\t' && check != '\n' && check != '\r' {
                         break;
                     }
+
                     chars_to_remove += 1;
                 }
                 for _ in 0..chars_to_remove {
@@ -332,9 +333,82 @@ impl Formatter {
                 // Handle new line.
                 match self.config.new_line_around_braces {
                     NewLineAroundOpenBraceRule::After => {
-                        // Add brace.
-                        output.push(' ');
-                        output.push(_char);
+                        let mut found_comment = false;
+
+                        // Make sure previous line is not a comment otherwise our stuff will be inside of a comment:
+                        // struct Foo // comment
+                        // {
+                        // can become this:
+                        // struct Foo // comment {
+
+                        // Read the previous line.
+                        let mut line_before = String::new();
+                        for check in output.chars().rev() {
+                            if check == '\n' {
+                                break;
+                            }
+                            line_before.push(check);
+                        }
+                        line_before = line_before.chars().rev().collect();
+
+                        if !Self::is_text_starts_with_comment(&line_before) {
+                            // See if it has a comment.
+                            let line_before_chars_count = line_before.chars().count();
+                            let mut skipped_chars_count: usize = 0;
+                            let mut copy_chars = false;
+                            let mut last_empty_chars_count: usize = 0;
+                            let mut line_before_iter = line_before.chars().peekable();
+                            while let Some(prev_line_char) = line_before_iter.next() {
+                                if copy_chars {
+                                    output.push(prev_line_char);
+                                }
+
+                                if prev_line_char == '/' {
+                                    if let Some('/') = line_before_iter.peek() {
+                                        found_comment = true;
+
+                                        // Remove everything until this comment.
+                                        chars_to_remove +=
+                                            line_before_chars_count - skipped_chars_count - 1;
+
+                                        // Also remove empty text before this comment.
+                                        chars_to_remove += last_empty_chars_count.saturating_sub(1);
+
+                                        for _ in 0..chars_to_remove {
+                                            output.pop();
+                                        }
+
+                                        // Add a brace.
+                                        output.push(' ');
+                                        output.push('{');
+                                        output.push(' ');
+
+                                        // Now copy everything until end of line.
+                                        output.push('/');
+                                        copy_chars = true;
+                                    }
+                                }
+
+                                if prev_line_char == ' ' || prev_line_char == '\t' {
+                                    last_empty_chars_count += 1;
+                                } else {
+                                    last_empty_chars_count = 0;
+                                }
+
+                                skipped_chars_count += 1;
+                            }
+
+                            if !found_comment {
+                                // Add a space and a brace.
+                                output.push(' ');
+                                output.push(_char);
+                            }
+                        } else {
+                            // Just put bracket to a new line.
+                            output += LINE_ENDING;
+                            output += &indentation_text.repeat(nesting_count);
+                            output.push(_char);
+                        }
 
                         // Increase nesting.
                         nesting_count += 1;
@@ -387,8 +461,8 @@ impl Formatter {
                 // Copy brace.
                 output.push(_char);
 
-                // Don't insert a new line here, here is an example why:
                 // struct Foo{
+                // Don't insert a new line here, here is an example why:
                 // };
                 // The `;` will be on the new line if we insert one.
             } else if _char == '[' || _char == '(' {
@@ -779,6 +853,21 @@ impl Formatter {
         }
 
         Ok(())
+    }
+
+    /// Checks if the specified text starts with a comment while ignoring any whitespace
+    /// in the beginning.
+    ///
+    /// # Examples
+    /// ```
+    /// assert!(is_text_starts_with_comment("   // comment"), true);
+    /// assert!(is_text_starts_with_comment("  3// comment"), false);
+    /// ```
+    fn is_text_starts_with_comment(text: &str) -> bool {
+        text.chars()
+            .filter(|&_char| _char != ' ' && _char != '\t')
+            .collect::<String>()
+            .starts_with("//")
     }
 
     /// Checks that the documentation for fields of the specified struct are written correctly.
