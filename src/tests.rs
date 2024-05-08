@@ -338,9 +338,11 @@ mod tests {
 
         // Make sure default config uses other setting.
         assert!(config.variable_case.is_none());
+        assert!(config.struct_case.is_none());
 
         // Change the setting.
         config.variable_case = Some(Case::Camel);
+        config.struct_case = Some(Case::Pascal);
 
         // Test.
         test_formatting_fail_success(config, "nolint");
