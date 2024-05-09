@@ -376,7 +376,12 @@ impl Formatter {
 
                                         // Remove everything until this comment.
                                         chars_to_remove +=
-                                            line_before_chars_count - skipped_chars_count - 1;
+                                            line_before_chars_count - skipped_chars_count;
+
+                                        #[cfg(windows)]
+                                        {
+                                            chars_to_remove += 1; // also remove `\r`
+                                        }
 
                                         // Also remove empty text before this comment.
                                         chars_to_remove += last_empty_chars_count.saturating_sub(1);
