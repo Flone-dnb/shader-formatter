@@ -267,6 +267,7 @@ where
     // A parser for variable declaration.
     let variable_declaration = std_var_type
         .then(ident)
+        .then_ignore(just(Token::Ctrl('[')).not()) // ignore arrays for now
         .then_ignore(just(Token::Op("=")).or_not())
         .then_ignore(none_of(Token::Ctrl(';')).repeated())
         .then_ignore(just(Token::Ctrl(';')).or_not())
