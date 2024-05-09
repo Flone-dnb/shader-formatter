@@ -346,7 +346,8 @@ mod tests {
         config.preprocessor_if_creates_nesting = true;
 
         // Test.
-        compare_files_in_directory(config, "preprocessor_if_creates_nesting");
+        compare_files_in_directory(config.clone(), "preprocessor_if_creates_nesting/1");
+        compare_files_in_directory(config, "preprocessor_if_creates_nesting/2");
     }
 
     #[test]

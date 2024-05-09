@@ -164,6 +164,7 @@ impl Formatter {
 
         // For preprocessor directives.
         let mut preproc_add_nesting_on_next_line = false;
+        let mut line_started_with_preprocessor = false;
 
         // Other.
         let mut last_3_chars = [' '; 3];
@@ -208,18 +209,24 @@ impl Formatter {
                     stop_ignoring_if_end_of_line = false;
                     consecutive_empty_new_line_count = 0;
 
-                    if _char == '#' && !self.config.indent_preprocessor {
-                        // Remove everything until the beginning of the line.
-                        let mut chars_to_remove = 0;
-                        for check in output.chars().rev() {
-                            if check != ' ' && check != '\t' {
-                                break;
+                    if _char == '#' {
+                        line_started_with_preprocessor = true;
+
+                        if !self.config.indent_preprocessor {
+                            // Remove everything until the beginning of the line.
+                            let mut chars_to_remove = 0;
+                            for check in output.chars().rev() {
+                                if check != ' ' && check != '\t' {
+                                    break;
+                                }
+                                chars_to_remove += 1;
                             }
-                            chars_to_remove += 1;
+                            for _ in 0..chars_to_remove {
+                                output.pop();
+                            }
                         }
-                        for _ in 0..chars_to_remove {
-                            output.pop();
-                        }
+                    } else {
+                        line_started_with_preprocessor = false;
                     }
 
                     if inside_c_comment_count > 0 && _char == '*' {
@@ -454,9 +461,15 @@ impl Formatter {
                     output.pop();
                 }
 
-                // Add a new line.
-                output += LINE_ENDING;
-                output += &indentation_text.repeat(nesting_count);
+                // Don't add a new line if this line was started with `#`
+                // we likelly need to keep the code on the same line.
+                if !line_started_with_preprocessor {
+                    // Add a new line.
+                    output += LINE_ENDING;
+                    output += &indentation_text.repeat(nesting_count);
+                } else {
+                    output.push(' '); // just add a space after text
+                }
 
                 // Copy brace.
                 output.push(_char);
