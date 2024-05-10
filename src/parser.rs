@@ -165,6 +165,15 @@ pub fn token_parser<'src>(
     let preprocessor_other = just("#")
         .then(text::ascii::ident())
         .padded()
+        .then(
+            // custom macros are hard to handle so we guess if we take the whole line or just some part
+            any()
+                .and_is(just("\n").not()) // stop on end of line
+                .and_is(just("struct").or(just("layout")).not()) // stop if we found a struct
+                .repeated()
+                .to_slice()
+                .padded(),
+        )
         .to_slice()
         .map(Token::Preprocessor);
     let preprocessor = preprocessor_if
