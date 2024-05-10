@@ -88,7 +88,7 @@ int WrOnG_cAsE = 1;
 
 In addition, similar to `clang-format`s `clang-format off` comments you can mark some parts of your code to be skipped by the formatted:
 
-``
+```
 // NOFORMATBEGIN
 void foo(            int a);
 void bar( SomeCustomType b);
