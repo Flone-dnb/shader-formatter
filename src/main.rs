@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 use config::Config;
 use formatter::Formatter;
 use std::io::Write;

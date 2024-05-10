@@ -433,15 +433,17 @@ impl Formatter {
                                         found_comment = true;
 
                                         // Remove everything until this comment.
-                                        let mut additional_chars_to_remove =
-                                            line_before_chars_count - skipped_chars_count;
                                         #[cfg(windows)]
                                         {
-                                            // also consider `\r`
-                                            additional_chars_to_remove =
-                                                additional_chars_to_remove.saturating_sub(1);
+                                            // `-1` to also consider `\r`
+                                            chars_to_remove +=
+                                                line_before_chars_count - skipped_chars_count - 1;
                                         }
-                                        chars_to_remove += additional_chars_to_remove;
+                                        #[cfg(not(windows))]
+                                        {
+                                            chars_to_remove +=
+                                                line_before_chars_count - skipped_chars_count;
+                                        }
 
                                         // Also remove empty text before this comment.
                                         chars_to_remove += last_empty_chars_count.saturating_sub(1);
