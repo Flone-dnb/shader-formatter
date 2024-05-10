@@ -16,6 +16,8 @@ const ONLY_SCAN_ARG: &str = "--only-scan";
 fn main() -> ExitCode {
     // Make sure a path is specified.
     if std::env::args().len() == 1 {
+        println!("shader formatter (v{})", env!("CARGO_PKG_VERSION"));
+        println!();
         println!("expected a path to be specified\n");
         println!("usage:");
         println!(
