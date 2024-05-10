@@ -10,6 +10,7 @@ pub enum Type {
     Float,
     Vector,
     Matrix,
+    Array,
     Texture,
     Sampler,
     Custom,
@@ -217,21 +218,6 @@ where
     let comment = select! { Token::Comment(c) => c};
     let token = select! { token => token };
 
-    // A parser for struct fields.
-    let field = comment
-        .repeated()
-        .collect::<Vec<&str>>()
-        .then(std_var_type.or(ident.map(|_| Type::Custom)))
-        .then(ident)
-        .then_ignore(just(Token::Ctrl('[')).then(just(Token::Ctrl(']'))).or_not()) // for arrays
-        .then_ignore(none_of(Token::Ctrl(';')).repeated())
-        .then_ignore(just(Token::Ctrl(';')))
-        .map(|((opt_comments, _type), name)| StructField {
-            _type,
-            name,
-            docs: opt_comments.concat(),
-        });
-
     // A parser for GLSL `layout` keyword.
     let layout = just(Token::Ident("layout"))
         .ignore_then(just(Token::Ctrl('(')))
@@ -240,6 +226,46 @@ where
         .ignore_then(just(Token::Op("=")))
         .ignore_then(select! { Token::Integer(ident) => ident })
         .ignore_then(just(Token::Ctrl(')')));
+
+    // A parser for struct fields.
+    let field = comment
+        .repeated()
+        .collect::<Vec<&str>>()
+        .then(std_var_type.or(ident.map(|_| Type::Custom)))
+        .then(ident)
+        .then(just(Token::Ctrl('[')).or_not()) // for arrays
+        .then_ignore(none_of(Token::Ctrl(';')).repeated())
+        .then_ignore(just(Token::Ctrl(';')))
+        .map(|(((opt_comments, _type), name), opt_array)| {
+            if opt_array.is_some() {
+                StructField {
+                    _type: Type::Array,
+                    name,
+                    docs: opt_comments.concat(),
+                }
+            } else {
+                StructField {
+                    _type,
+                    name,
+                    docs: opt_comments.concat(),
+                }
+            }
+        });
+
+    // A parser for variable declaration.
+    let variable_declaration = std_var_type
+        .then(ident)
+        .then(just(Token::Ctrl('[')).or_not())
+        .then_ignore(just(Token::Op("=")).or_not())
+        .then_ignore(none_of(Token::Ctrl(';')).repeated())
+        .then_ignore(just(Token::Ctrl(';')).or_not())
+        .map(|((t, name), opt_array)| {
+            if opt_array.is_some() {
+                ComplexToken::VariableDeclaration(Type::Array, name)
+            } else {
+                ComplexToken::VariableDeclaration(t, name)
+            }
+        });
 
     // A parser for structs.
     let _struct = comment
@@ -263,15 +289,6 @@ where
                 docs: opt_comments.concat(),
             })
         });
-
-    // A parser for variable declaration.
-    let variable_declaration = std_var_type
-        .then(ident)
-        .then_ignore(just(Token::Ctrl('[')).not()) // ignore arrays for now
-        .then_ignore(just(Token::Op("=")).or_not())
-        .then_ignore(none_of(Token::Ctrl(';')).repeated())
-        .then_ignore(just(Token::Ctrl(';')).or_not())
-        .map(|(t, name)| ComplexToken::VariableDeclaration(t, name));
 
     // A parser for function arguments that use HLSL semantics.
     let argument_semantic = std_var_type
