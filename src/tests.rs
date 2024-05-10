@@ -186,6 +186,28 @@ mod tests {
     }
 
     #[test]
+    fn new_line_after_brace_in_multiline_macro() {
+        let config = Config::default();
+
+        assert!(config.new_line_around_braces == NewLineAroundOpenBraceRule::After);
+
+        compare_files_in_directory(
+            config,
+            "default_settings/new_line_after_brace_in_multiline_macro",
+        );
+    }
+
+    #[test]
+    fn new_line_before_brace_in_multiline_macro() {
+        let mut config = Config::default();
+
+        assert!(config.new_line_around_braces != NewLineAroundOpenBraceRule::Before);
+        config.new_line_around_braces = NewLineAroundOpenBraceRule::Before;
+
+        compare_files_in_directory(config, "new_line_before_brace_in_multiline_macro");
+    }
+
+    #[test]
     fn empty_files() {
         // Test.
         test_formatting_fail_success(Config::default(), "empty_files");

@@ -166,6 +166,10 @@ impl Formatter {
         let mut preproc_add_nesting_on_next_line = false;
         let mut line_started_with_preprocessor = false;
 
+        // For macros.
+        let mut last_non_space_char_is_backslash = false;
+        let mut prev_line_ended_with_backslash = false;
+
         // Other.
         let mut last_3_chars = [' '; 3];
         let mut inside_no_format = false;
@@ -201,6 +205,8 @@ impl Formatter {
 
             if is_on_new_line {
                 inside_comment = false;
+
+                prev_line_ended_with_backslash = last_non_space_char_is_backslash;
 
                 // Find where text starts.
                 if _char != ' ' && _char != '\t' {
@@ -256,7 +262,7 @@ impl Formatter {
                 }
             }
 
-            // Detect a C-comment.
+            // Detect a C-style comment.
             if last_3_chars[1] == '/' && last_3_chars[2] == '*' && (_char == '*' || _char == '!') {
                 inside_c_comment_count += 1;
             } else if last_3_chars[1] == '*' && last_3_chars[2] == '/' {
@@ -332,11 +338,17 @@ impl Formatter {
                 continue;
             }
 
+            if _char != ' ' {
+                last_non_space_char_is_backslash = _char == '\\';
+            }
+
             if _char == '{' {
                 // Remove everything until text.
                 let mut chars_to_remove = 0;
+                let mut text_starts_with_backslash = false;
                 for check in output.chars().rev() {
                     if check != ' ' && check != '\t' && check != '\n' && check != '\r' {
+                        text_starts_with_backslash = check == '\\';
                         break;
                     }
 
@@ -349,13 +361,38 @@ impl Formatter {
                 // Handle new line.
                 match self.config.new_line_around_braces {
                     NewLineAroundOpenBraceRule::After => {
-                        let mut found_comment = false;
+                        if prev_line_ended_with_backslash && text_starts_with_backslash {
+                            // Most likelly we got here from this code:
+                            // #define MACRO \
+                            // ...           \
+                            // {
+                            // and now we have:
+                            // #define MACRO \
+                            // ...           \{
+
+                            // Remove backslash.
+                            output.pop();
+
+                            // Remove everything until text.
+                            let mut chars_to_remove = 0;
+                            for check in output.chars().rev() {
+                                if check != ' ' && check != '\t' && check != '\n' && check != '\r' {
+                                    break;
+                                }
+
+                                chars_to_remove += 1;
+                            }
+                            for _ in 0..chars_to_remove {
+                                output.pop();
+                            }
+                        }
 
                         // Make sure previous line is not a comment otherwise our stuff will be inside of a comment:
                         // struct Foo // comment
                         // {
                         // can become this:
                         // struct Foo // comment {
+                        let mut found_comment = false;
 
                         // Read the previous line.
                         let mut line_before = String::new();
@@ -436,13 +473,25 @@ impl Formatter {
                         // Increase nesting.
                         nesting_count += 1;
 
-                        // Insert a new line.
-                        is_on_new_line = true;
-                        output += LINE_ENDING;
-                        output += &indentation_text.repeat(nesting_count);
-                        consecutive_empty_new_line_count += 1;
+                        // Before inserting a new line check if we are inside of a multi-line macro.
+                        if !prev_line_ended_with_backslash {
+                            // Insert a new line.
+                            is_on_new_line = true;
+                            output += LINE_ENDING;
+                            output += &indentation_text.repeat(nesting_count);
+                            consecutive_empty_new_line_count += 1;
+                        }
                     }
                     NewLineAroundOpenBraceRule::Before => {
+                        // Before inserting a new line check if we are inside of a multi-line macro.
+                        if prev_line_ended_with_backslash {
+                            if let Some(last_char) = output.chars().rev().next() {
+                                if last_char != '\\' {
+                                    output.push('\\');
+                                }
+                            }
+                        }
+
                         // Insert a new line.
                         is_on_new_line = true;
                         output += LINE_ENDING;
@@ -450,6 +499,10 @@ impl Formatter {
 
                         // Add brace.
                         output.push(_char);
+
+                        if prev_line_ended_with_backslash {
+                            output.push('\\');
+                        }
 
                         // Add new line with increased nesting.
                         nesting_count += 1;
@@ -459,7 +512,7 @@ impl Formatter {
                     }
                 }
 
-                // Ignore everything until we find a text.
+                // Ignore everything until we find some text.
                 ignore_until_text = true;
             } else if _char == '}' {
                 // Decrease nesting.
