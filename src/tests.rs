@@ -178,6 +178,14 @@ mod tests {
     }
 
     #[test]
+    fn long_line_split_indentation() {
+        compare_files_in_directory(
+            Config::default(),
+            "default_settings/long_line_split_indentation",
+        );
+    }
+
+    #[test]
     fn empty_files() {
         // Test.
         test_formatting_fail_success(Config::default(), "empty_files");

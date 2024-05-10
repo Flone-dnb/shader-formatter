@@ -227,6 +227,15 @@ impl Formatter {
                         }
                     } else {
                         line_started_with_preprocessor = false;
+
+                        if _char == '=' {
+                            // Since this is the first character on the line,
+                            // add an additional indentation because this line is probably too long
+                            // and was split into 2 lines, example:
+                            // int some_long_variable_name
+                            //     = ...;
+                            output += indentation_text;
+                        }
                     }
 
                     if inside_c_comment_count > 0 && _char == '*' {
