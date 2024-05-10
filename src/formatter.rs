@@ -177,6 +177,9 @@ impl Formatter {
         for _char in content.chars() {
             // Just ignore '\r's.
             if _char == '\r' {
+                if inside_no_format {
+                    output.push(_char);
+                }
                 continue;
             }
 
@@ -184,20 +187,24 @@ impl Formatter {
             if _char == '\n' {
                 is_on_new_line = true;
 
-                if preproc_add_nesting_on_next_line {
-                    nesting_count += 1;
-                    preproc_add_nesting_on_next_line = false;
-                }
+                if !inside_no_format {
+                    if preproc_add_nesting_on_next_line {
+                        nesting_count += 1;
+                        preproc_add_nesting_on_next_line = false;
+                    }
 
-                if (!ignore_until_text || stop_ignoring_if_end_of_line)
-                    && consecutive_empty_new_line_count <= self.config.max_empty_lines
-                {
-                    ignore_until_text = false;
-                    stop_ignoring_if_end_of_line = false;
+                    if (!ignore_until_text || stop_ignoring_if_end_of_line)
+                        && consecutive_empty_new_line_count <= self.config.max_empty_lines
+                    {
+                        ignore_until_text = false;
+                        stop_ignoring_if_end_of_line = false;
 
-                    output += LINE_ENDING;
-                    output += &indentation_text.repeat(nesting_count);
-                    consecutive_empty_new_line_count += 1;
+                        output += LINE_ENDING;
+                        output += &indentation_text.repeat(nesting_count);
+                        consecutive_empty_new_line_count += 1;
+                    }
+                } else {
+                    output.push(_char);
                 }
 
                 continue;
@@ -215,40 +222,45 @@ impl Formatter {
                     stop_ignoring_if_end_of_line = false;
                     consecutive_empty_new_line_count = 0;
 
-                    if _char == '#' {
-                        line_started_with_preprocessor = true;
+                    if !inside_no_format {
+                        if _char == '#' {
+                            line_started_with_preprocessor = true;
 
-                        if !self.config.indent_preprocessor {
-                            // Remove everything until the beginning of the line.
-                            let mut chars_to_remove = 0;
-                            for check in output.chars().rev() {
-                                if check != ' ' && check != '\t' {
-                                    break;
+                            if !self.config.indent_preprocessor {
+                                // Remove everything until the beginning of the line.
+                                let mut chars_to_remove = 0;
+                                for check in output.chars().rev() {
+                                    if check != ' ' && check != '\t' {
+                                        break;
+                                    }
+                                    chars_to_remove += 1;
                                 }
-                                chars_to_remove += 1;
+                                for _ in 0..chars_to_remove {
+                                    output.pop();
+                                }
                             }
-                            for _ in 0..chars_to_remove {
-                                output.pop();
+                        } else {
+                            line_started_with_preprocessor = false;
+
+                            if _char == '=' {
+                                // Since this is the first character on the line,
+                                // add an additional indentation because this line is probably too long
+                                // and was split into 2 lines, example:
+                                // int some_long_variable_name
+                                //     = ...;
+                                output += indentation_text;
                             }
                         }
-                    } else {
-                        line_started_with_preprocessor = false;
 
-                        if _char == '=' {
-                            // Since this is the first character on the line,
-                            // add an additional indentation because this line is probably too long
-                            // and was split into 2 lines, example:
-                            // int some_long_variable_name
-                            //     = ...;
-                            output += indentation_text;
+                        if inside_c_comment_count > 0 && _char == '*' {
+                            // Add a single space for C-style comments to look good.
+                            output.push(' ');
                         }
-                    }
-
-                    if inside_c_comment_count > 0 && _char == '*' {
-                        // Add a single space for C-style comments to look good.
-                        output.push(' ');
                     }
                 } else {
+                    if inside_no_format {
+                        output.push(_char);
+                    }
                     continue;
                 }
             }
@@ -485,7 +497,7 @@ impl Formatter {
                     NewLineAroundOpenBraceRule::Before => {
                         // Before inserting a new line check if we are inside of a multi-line macro.
                         if prev_line_ended_with_backslash {
-                            if let Some(last_char) = output.chars().rev().next() {
+                            if let Some(last_char) = output.chars().next_back() {
                                 if last_char != '\\' {
                                     output.push('\\');
                                 }

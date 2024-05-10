@@ -401,6 +401,7 @@ mod tests {
         // Test.
         compare_files_in_directory(Config::default(), "noformat/1");
         compare_files_in_directory(Config::default(), "noformat/2");
+        compare_files_in_directory(Config::default(), "noformat/3");
         test_formatting_fail_success(Config::default(), "noformat/no_matching_end")
     }
 
