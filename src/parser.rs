@@ -299,8 +299,16 @@ where
             })
         });
 
+    // A parser for input modifiers for HLSL function arguments.
+    let argument_modifier = just(Token::Ident("in"))
+        .or(just(Token::Ident("out")))
+        .or(just(Token::Ident("uniform")))
+        .or_not();
+
     // A parser for function arguments that use HLSL semantics.
-    let argument_semantic = std_var_type
+    let argument_semantic = argument_modifier
+        .clone()
+        .ignore_then(std_var_type)
         .then(ident)
         .then_ignore(
             just(Token::Ctrl(':'))
@@ -314,7 +322,9 @@ where
         });
 
     // A parser for function arguments with custom (user) type.
-    let custom_argument = ident
+    let custom_argument = argument_modifier
+        .clone()
+        .ignore_then(ident)
         .then(ident)
         .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))
         .map(|(_type, name)| FuncArgument {
@@ -324,7 +334,8 @@ where
         });
 
     // A parser for function arguments with standard types.
-    let std_argument = std_var_type
+    let std_argument = argument_modifier
+        .ignore_then(std_var_type)
         .then(ident)
         .then_ignore(just(Token::Ctrl(',')).or(just(Token::Ctrl(')'))))
         .map(|(_type, name)| FuncArgument {
@@ -336,11 +347,16 @@ where
     // A parser for function arguments.
     let argument = std_argument.or(argument_semantic).or(custom_argument);
 
-    // A parser for functions with standard return type.
-    let func_std_return = comment
+    // A parser for function return type.
+    let func_return_type = std_var_type.or(ident
+        .and_is(just(Token::Keyword("return")).not())
+        .map(|_| Type::Custom));
+
+    // A parser for functions.
+    let function = comment
         .repeated()
         .collect::<Vec<&str>>()
-        .then(std_var_type)
+        .then(func_return_type)
         .then(ident)
         .then_ignore(just(Token::Ctrl('(')))
         .then(argument.clone().repeated().collect())
@@ -353,28 +369,6 @@ where
                 docs: opt_comments.concat(),
             })
         });
-
-    // A parser for functions with custom return type
-    // TODO: remove code duplication
-    let func_custom_return = comment
-        .repeated()
-        .collect::<Vec<&str>>()
-        .then_ignore(ident.and_is(just(Token::Keyword("return")).not()))
-        .then(ident)
-        .then_ignore(just(Token::Ctrl('(')))
-        .then(argument.repeated().collect())
-        .then_ignore(just(Token::Ctrl(')')).or_not())
-        .map(|((opt_comments, name), args)| {
-            ComplexToken::Function(FunctionInfo {
-                name,
-                args,
-                return_type: Type::Custom,
-                docs: opt_comments.concat(),
-            })
-        });
-
-    // A parser for functions.
-    let function = func_std_return.or(func_custom_return);
 
     // If non of our parsers from above worked then just pass the token.
     let output = _struct

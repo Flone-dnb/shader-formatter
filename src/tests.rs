@@ -186,6 +186,14 @@ mod tests {
     }
 
     #[test]
+    fn func_arg_input_modifier_parsing() {
+        test_formatting_fail_success(
+            Config::default(),
+            "default_settings/func_arg_input_modifier_parsing",
+        )
+    }
+
+    #[test]
     fn new_line_after_brace_in_multiline_macro() {
         let config = Config::default();
 
