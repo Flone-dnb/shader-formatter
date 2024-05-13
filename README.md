@@ -30,7 +30,7 @@ Below is the list of all possible formatting rules that you can describe in your
     - Tab
     - TwoSpaces
     - FourSpaces
-- **NewLineAroundOpenBraceRule** (string) - defines whether to put a new line before an open brace or after it.
+- **NewLineOnOpenBrace** (string) - defines whether to put a new line before an open brace or after it.
     - After
     - Before
 - **MaxEmptyLines** (unsigned integer) - defines how much consecutive empty lines to keep.

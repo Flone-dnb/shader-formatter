@@ -5,7 +5,7 @@ mod tests {
     use crate::{
         config::Config,
         formatter::{Formatter, CHANGES_REQUIRED_ERR_MSG},
-        rules::{Case, NewLineAroundOpenBraceRule},
+        rules::{Case, NewLineOnOpenBrace},
     };
 
     fn get_project_root() -> PathBuf {
@@ -189,7 +189,7 @@ mod tests {
     fn new_line_after_brace_in_multiline_macro() {
         let config = Config::default();
 
-        assert!(config.new_line_around_braces == NewLineAroundOpenBraceRule::After);
+        assert!(config.new_line_around_braces == NewLineOnOpenBrace::After);
 
         compare_files_in_directory(
             config,
@@ -201,8 +201,8 @@ mod tests {
     fn new_line_before_brace_in_multiline_macro() {
         let mut config = Config::default();
 
-        assert!(config.new_line_around_braces != NewLineAroundOpenBraceRule::Before);
-        config.new_line_around_braces = NewLineAroundOpenBraceRule::Before;
+        assert!(config.new_line_around_braces != NewLineOnOpenBrace::Before);
+        config.new_line_around_braces = NewLineOnOpenBrace::Before;
 
         compare_files_in_directory(config, "new_line_before_brace_in_multiline_macro");
     }
@@ -218,10 +218,10 @@ mod tests {
         let mut config = Config::default();
 
         // Make sure default config uses other setting.
-        assert!(config.new_line_around_braces == NewLineAroundOpenBraceRule::After);
+        assert!(config.new_line_around_braces == NewLineOnOpenBrace::After);
 
         // Change the setting.
-        config.new_line_around_braces = NewLineAroundOpenBraceRule::Before;
+        config.new_line_around_braces = NewLineOnOpenBrace::Before;
 
         // Test.
         compare_files_in_directory(config, "new_line_before_brace");
@@ -232,7 +232,7 @@ mod tests {
         let mut config = Config::default();
 
         // Make sure default config uses other setting.
-        assert!(config.new_line_around_braces == NewLineAroundOpenBraceRule::After);
+        assert!(config.new_line_around_braces == NewLineOnOpenBrace::After);
 
         // Change the setting.
         config.spaces_in_brackets = true;

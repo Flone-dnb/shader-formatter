@@ -6,7 +6,7 @@ use crate::{
     config::Config,
     helpers,
     parser::{self, ComplexToken::*, FunctionInfo, StructInfo, Token, Type},
-    rules::{Case, IndentationRule, NewLineAroundOpenBraceRule},
+    rules::{Case, IndentationRule, NewLineOnOpenBrace},
 };
 
 /// Text that we append to the beginning of an error message if manual changes (in the code) are required
@@ -372,7 +372,7 @@ impl Formatter {
 
                 // Handle new line.
                 match self.config.new_line_around_braces {
-                    NewLineAroundOpenBraceRule::After => {
+                    NewLineOnOpenBrace::After => {
                         if prev_line_ended_with_backslash && text_starts_with_backslash {
                             // Most likelly we got here from this code:
                             // #define MACRO \
@@ -496,7 +496,7 @@ impl Formatter {
                             consecutive_empty_new_line_count += 1;
                         }
                     }
-                    NewLineAroundOpenBraceRule::Before => {
+                    NewLineOnOpenBrace::Before => {
                         // Before inserting a new line check if we are inside of a multi-line macro.
                         if prev_line_ended_with_backslash {
                             if let Some(last_char) = output.chars().next_back() {

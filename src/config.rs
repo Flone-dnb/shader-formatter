@@ -10,7 +10,7 @@ const CONFIG_FILE_NAME: &str = "shader-formatter.toml";
 /// Represents a config file with formatting rules, deserialized from the disk.
 #[derive(Clone)]
 pub struct Config {
-    pub new_line_around_braces: NewLineAroundOpenBraceRule,
+    pub new_line_around_braces: NewLineOnOpenBrace,
     pub indentation: IndentationRule,
     pub max_empty_lines: usize,
     pub spaces_in_brackets: bool,
@@ -32,7 +32,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             max_empty_lines: 1,
-            new_line_around_braces: NewLineAroundOpenBraceRule::After,
+            new_line_around_braces: NewLineOnOpenBrace::After,
             indentation: IndentationRule::FourSpaces,
             spaces_in_brackets: false,
             variable_case: None,
@@ -120,11 +120,11 @@ impl Config {
                     config.function_case = Some(Self::toml_value_to_case(&key, &value)?)
                 }
                 "StructCase" => config.struct_case = Some(Self::toml_value_to_case(&key, &value)?),
-                "NewLineAroundOpenBraceRule" => {
+                "NewLineOnOpenBrace" => {
                     config.new_line_around_braces = match Self::toml_value_to_string(&key, &value)?
                     {
-                        "After" => NewLineAroundOpenBraceRule::After,
-                        "Before" => NewLineAroundOpenBraceRule::Before,
+                        "After" => NewLineOnOpenBrace::After,
+                        "Before" => NewLineOnOpenBrace::Before,
                         other => {
                             return Err(format!(
                                 "found unknown value \"{}\" for rule \"{}\"",

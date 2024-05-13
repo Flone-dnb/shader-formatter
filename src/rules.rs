@@ -6,7 +6,7 @@ pub enum IndentationRule {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub enum NewLineAroundOpenBraceRule {
+pub enum NewLineOnOpenBrace {
     Before,
     After,
 }
