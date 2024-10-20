@@ -185,6 +185,7 @@ impl Formatter {
 
             // Handle new line.
             if _char == '\n' {
+                let current_line_is_empty = is_on_new_line;
                 is_on_new_line = true;
 
                 if !inside_no_format {
@@ -196,11 +197,21 @@ impl Formatter {
                     if (!ignore_until_text || stop_ignoring_if_end_of_line)
                         && consecutive_empty_new_line_count <= self.config.max_empty_lines
                     {
+                        // Reset state for new lines.
                         ignore_until_text = false;
                         stop_ignoring_if_end_of_line = false;
 
+                        if current_line_is_empty {
+                            // Remove indentation that we added.
+                            for _ in 0..nesting_count * indentation_text.chars().count() {
+                                output.pop();
+                            }
+                        }
+
+                        // Add a new line.
                         output += LINE_ENDING;
                         output += &indentation_text.repeat(nesting_count);
+
                         consecutive_empty_new_line_count += 1;
                     }
                 } else {

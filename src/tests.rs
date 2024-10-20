@@ -426,4 +426,15 @@ mod tests {
         // Test.
         test_formatting_fail_success(config, "require_docs_on_fields");
     }
+
+    #[test]
+    fn empty_lines_no_indent() {
+        let mut config = Config::default();
+
+        config.indent_preprocessor = true;
+        config.preprocessor_if_creates_nesting = true;
+
+        // Test.
+        compare_files_in_directory(config, "empty_lines_no_indent");
+    }
 }

@@ -3,14 +3,14 @@
 void bar() {
     #define SOMEVAL1
     int test = 0;
-    
+
     #if FEATURE
         // hmm...
     #endif
-    
+
     #ifdef ENABLE_FEATURE1
         int a = 1;
-        
+
         #ifdef SUB_FEATURE
             #define SOME_MACRO
         #endif
@@ -20,7 +20,7 @@ void bar() {
         int a = 3;
     #endif
     int b = 0;
-    
+
     // #ifdef DISABLED
     // int a = 2;
     // #endif

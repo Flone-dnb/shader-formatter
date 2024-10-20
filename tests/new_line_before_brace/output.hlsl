@@ -8,13 +8,13 @@ float4 main(VertexOut pin) : SV_Target
     {
         int invalidCase = 2;
     }
-    
+
     if (test == -1)
     {
         if (true)
         {
             // TODO
-            
+
             // TODO
         }else
         {
@@ -40,7 +40,7 @@ namespace hello
         int test = 0;
         test
         *= 2; // this is not a C-style comment.
-        
+
         /** This is a comment. */
         int b = 2;
     }
