@@ -21,6 +21,7 @@ pub struct Config {
     pub int_prefix: Option<String>,
     pub float_prefix: Option<String>,
     pub global_variable_prefix: Option<String>,
+    pub force_line_ending: Option<String>,
     pub require_docs_on_functions: bool,
     pub require_docs_on_structs: bool,
     pub require_docs_on_fields: bool,
@@ -42,6 +43,7 @@ impl Default for Config {
             int_prefix: None,
             float_prefix: None,
             global_variable_prefix: None,
+            force_line_ending: None,
             require_docs_on_functions: false,
             require_docs_on_structs: false,
             require_docs_on_fields: false,
@@ -152,6 +154,10 @@ impl Config {
                 }
                 "GlobalVariablePrefix" => {
                     config.global_variable_prefix =
+                        Some(Self::toml_value_to_string(&key, &value)?.to_string());
+                }
+                "ForceLineEnding" => {
+                    config.force_line_ending =
                         Some(Self::toml_value_to_string(&key, &value)?.to_string());
                 }
                 "RequireDocsOnFunctions" => {

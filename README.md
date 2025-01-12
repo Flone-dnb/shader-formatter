@@ -74,6 +74,8 @@ Below are the rules that are not checked unless they are specified in your confi
 - **FloatPrefix** (string) - defines required prefix for floating-point variables, for example if this rule is set to `f` then a correct variable may look like this: `fValue`.
 - **GlobalVariablePrefix** (string) - defines required prefix for global variables, this rule is applied before other prefix and case rules so you can have a "mixed" global variables names like "g_iMyVariable" where global prefix is "g_", int prefix is "i" and case is "Camel".
 
+- **ForceLineEnding** (string) - custom line ending, by default the formatter uses line ending according to the OS ("\r\n" for Windows and "\n" for everything else) but you can overwrite this setting by specifying the value, for example: "\n".
+
 # Temporary disabling formatting or checks
 
 Similar to `clang-tidy` you can use `NOLINT` comments to disable checks for certain parts of your code:

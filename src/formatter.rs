@@ -17,11 +17,6 @@ pub const CHANGES_REQUIRED_ERR_MSG: &str = "changes required";
 const NOFORMAT_BEGIN_COMMENT: &str = " NOFORMATBEGIN";
 const NOFORMAT_END_COMMENT: &str = " NOFORMATEND";
 
-#[cfg(windows)]
-const LINE_ENDING: &str = "\r\n";
-#[cfg(not(windows))]
-const LINE_ENDING: &str = "\n";
-
 /// Applies rules on files.
 pub struct Formatter {
     config: Config,
@@ -144,6 +139,16 @@ impl Formatter {
             IndentationRule::FourSpaces => "    ",
         };
 
+        // Prepare line ending.
+        let mut _line_ending = "\n";
+        #[cfg(windows)]
+        {
+            _line_ending = "\r\n";
+        }
+        if let Some(custom_line_ending) = &self.config.force_line_ending {
+            _line_ending = custom_line_ending;
+        }
+
         let mut output = String::with_capacity(content.len());
 
         // Prepare some handy variables...
@@ -209,7 +214,7 @@ impl Formatter {
                         }
 
                         // Add a new line.
-                        output += LINE_ENDING;
+                        output += _line_ending;
                         output += &indentation_text.repeat(nesting_count);
 
                         consecutive_empty_new_line_count += 1;
@@ -490,7 +495,7 @@ impl Formatter {
                             }
                         } else {
                             // Just put bracket to a new line.
-                            output += LINE_ENDING;
+                            output += _line_ending;
                             output += &indentation_text.repeat(nesting_count);
                             output.push(_char);
                         }
@@ -502,7 +507,7 @@ impl Formatter {
                         if !prev_line_ended_with_backslash {
                             // Insert a new line.
                             is_on_new_line = true;
-                            output += LINE_ENDING;
+                            output += _line_ending;
                             output += &indentation_text.repeat(nesting_count);
                             consecutive_empty_new_line_count += 1;
                         }
@@ -519,7 +524,7 @@ impl Formatter {
 
                         // Insert a new line.
                         is_on_new_line = true;
-                        output += LINE_ENDING;
+                        output += _line_ending;
                         output += &indentation_text.repeat(nesting_count);
 
                         // Add brace.
@@ -531,7 +536,7 @@ impl Formatter {
 
                         // Add new line with increased nesting.
                         nesting_count += 1;
-                        output += LINE_ENDING;
+                        output += _line_ending;
                         output += &indentation_text.repeat(nesting_count);
                         consecutive_empty_new_line_count += 1;
                     }
@@ -559,7 +564,7 @@ impl Formatter {
                 // we likelly need to keep the code on the same line.
                 if !line_started_with_preprocessor {
                     // Add a new line.
-                    output += LINE_ENDING;
+                    output += _line_ending;
                     output += &indentation_text.repeat(nesting_count);
                 } else {
                     output.push(' '); // just add a space after text
