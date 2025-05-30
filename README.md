@@ -11,6 +11,10 @@ This tool combines features from such tools as `clang-format`, `clang-tidy` and 
 
 There is a VSCode extension for this tool, see: https://github.com/Flone-dnb/vscode-shader-formatter
 
+# Neovim plugin
+
+There is a Neovim plugin for this tool, see: https://github.com/Flone-dnb/shader-formatter.nvim
+
 # Formatting rules
 
 You can specify formatting rules by creating a file named `shader-formatter.toml` in the directory with your shaders or in any parent directory (similar to how you place a `.gitignore` file).
